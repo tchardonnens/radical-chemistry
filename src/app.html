@@ -1,0 +1,1489 @@
+<title>Radical Chemistry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#eaeef3; --dish:#f6f8fa; --panel:#f1f4f7; --raise:#ffffff;
+    --line:#d3dbe4; --line-soft:#e2e8ef;
+    --ink:#141c26; --ink-2:#41505f; --ink-3:#6d7d8e;
+    --lv0:#7b8898; --lv1:#1f8a72; --lv2:#2a72b8; --lv3:#6f52c0;
+    --lv4:#b07908; --lv5:#3d4a58;
+    --alarm:#c8442f; --synth:#b2318b;
+    --dot:rgba(20,28,38,.09);
+    --focus:#2a72b8;
+    --shadow:0 1px 2px rgba(20,28,38,.06), 0 8px 24px rgba(20,28,38,.05);
+    --insp:196px; --aside:376px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#080b11; --dish:#0b0f17; --panel:#0e131c; --raise:#141b26;
+      --line:#1d2735; --line-soft:#161e2a;
+      --ink:#dde4ee; --ink-2:#93a1b3; --ink-3:#6a7788;
+      --lv0:#6c7c90; --lv1:#43c2a5; --lv2:#57a5e6; --lv3:#a48ce8;
+      --lv4:#e3a93f; --lv5:#f2f1ea;
+      --alarm:#e2503c; --synth:#e260ae;
+      --dot:rgba(200,215,235,.07);
+      --focus:#57a5e6;
+      --shadow:0 1px 0 rgba(255,255,255,.02), 0 12px 32px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#080b11; --dish:#0b0f17; --panel:#0e131c; --raise:#141b26;
+    --line:#1d2735; --line-soft:#161e2a;
+    --ink:#dde4ee; --ink-2:#93a1b3; --ink-3:#6a7788;
+    --lv0:#6c7c90; --lv1:#43c2a5; --lv2:#57a5e6; --lv3:#a48ce8;
+    --lv4:#e3a93f; --lv5:#f2f1ea;
+    --alarm:#e2503c; --synth:#e260ae;
+    --dot:rgba(200,215,235,.07);
+    --focus:#57a5e6;
+    --shadow:0 1px 0 rgba(255,255,255,.02), 0 12px 32px rgba(0,0,0,.45);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .han{font-family:"Songti SC","Source Han Serif SC","Noto Serif CJK SC","Noto Serif SC",
+       "Hiragino Mincho ProN","Yu Mincho","SimSun","MS Mincho",serif}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  .app{display:grid; grid-template-columns:var(--insp) minmax(0,1fr) var(--aside);
+       height:100dvh; min-height:560px; position:relative}
+
+  /* draggable column dividers */
+  .grip{
+    position:absolute; top:0; bottom:0; width:11px; margin-left:-5px; z-index:6;
+    cursor:col-resize; background:none; border:0; padding:0; touch-action:none;
+  }
+  .grip::after{
+    content:""; position:absolute; inset:0 5px; background:transparent;
+    transition:background .12s;
+  }
+  .grip:hover::after, .grip.on::after{background:var(--focus)}
+  .grip:focus-visible{outline:0}
+  .grip:focus-visible::after{background:var(--focus)}
+  #grip-l{left:var(--insp)}
+  #grip-r{left:calc(100% - var(--aside))}
+
+  /* ---------- left column: what you are looking at ---------- */
+  .inspector{
+    background:var(--panel); border-right:1px solid var(--line);
+    display:flex; flex-direction:column; min-width:0; min-height:0;
+  }
+
+  /* ---------- stage ---------- */
+  .stage{display:flex; flex-direction:column; min-width:0; border-right:1px solid var(--line)}
+  .masthead{
+    display:flex; align-items:center; gap:24px 32px; flex-wrap:wrap;
+    padding:13px 22px; border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex; align-items:center; gap:12px; min-width:0}
+  .brand h1{
+    margin:0 0 3px; font-size:19px; font-weight:600; letter-spacing:-.02em; line-height:1;
+  }
+  .seal{
+    flex:none; font-size:16px; line-height:1; color:var(--alarm);
+    border:1.5px solid var(--alarm); border-radius:3px; padding:5px 6px 6px;
+  }
+  .tagline{font-size:12px; color:var(--ink-3); line-height:1.3; margin:0}
+  .vitals{margin-left:auto; display:flex; gap:30px}
+  .vital{display:flex; flex-direction:column-reverse; gap:3px; text-align:right}
+  .vital b{font-size:23px; font-weight:400; letter-spacing:-.02em;
+           font-variant-numeric:tabular-nums; line-height:1}
+  .vital span{font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+
+  .subhead{display:flex; flex-wrap:wrap; border-bottom:1px solid var(--line); background:var(--panel)}
+  .gauge{
+    flex:1 1 170px; min-width:0; padding:8px 22px 9px; display:flex; flex-direction:column; gap:6px;
+    border-right:1px solid var(--line-soft);
+  }
+  .gauge:last-child{border-right:0}
+  .gauge .row{display:flex; align-items:baseline; justify-content:space-between; gap:12px}
+  .gauge .k{font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+  .gauge .v{font-size:12.5px; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .gauge .v small{font-size:11px; color:var(--ink-3)}
+  .gauge .bar{height:2px; background:var(--line-soft); border-radius:1px; overflow:hidden;
+              display:flex}
+  .gauge .bar i{height:100%; transition:width .25s linear}
+  .gauge .k b{font-weight:400; color:var(--lv2)}
+  .gauge .k em{font-style:normal; color:var(--lv0)}
+  #gb-rx{background:var(--lv1)} #gb-ch{background:var(--lv2)}
+  #gb-ch2{background:var(--lv0)} #gb-co{background:var(--lv0)}
+
+  .dish{position:relative; flex:1; min-height:0; background:var(--dish); overflow:hidden}
+  #grid{display:block; width:100%; height:100%; cursor:crosshair; touch-action:none}
+  #grid.panning{cursor:grabbing}
+  #grid.pannable{cursor:grab}
+  .modes{
+    position:absolute; top:12px; right:12px; display:flex; gap:1px; z-index:2;
+    background:var(--line); border:1px solid var(--line); border-radius:2px; overflow:hidden;
+  }
+  .modes button{
+    border:0; border-radius:0; background:var(--panel); color:var(--ink-3);
+    font-size:11.5px; padding:6px 13px;
+  }
+  .modes button.on{background:var(--raise); color:var(--ink)}
+
+  .hint{
+    position:absolute; left:12px; bottom:10px; pointer-events:none;
+    font-size:10px; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3);
+    background:var(--dish); border:1px solid var(--line-soft); border-radius:2px;
+    padding:4px 8px;
+  }
+
+  /* ---------- specimen card ---------- */
+  .specimen{
+    display:flex; flex-direction:column; gap:9px;
+    padding:12px 13px 13px; border-bottom:1px solid var(--line);
+  }
+  .ident{display:flex; align-items:center; gap:10px}
+  .glyph{
+    flex:none; width:46px; height:46px; display:flex; align-items:center; justify-content:center;
+    font-size:34px; line-height:1; color:var(--ink-3);
+    border:1px solid var(--line); border-radius:2px; background:var(--dish);
+  }
+  .glyph.small{font-size:17px}
+  .who{display:flex; flex-direction:column; gap:5px; min-width:0}
+  .pinyin{font-size:14px; font-weight:500; overflow-wrap:anywhere}
+  .gloss{font-size:11.5px; color:var(--ink-2); line-height:1.45}
+  .eq{display:flex; align-items:center; gap:5px; font-size:15px; line-height:1.25; flex-wrap:wrap}
+  .eq .op{font-size:10.5px; color:var(--ink-3); letter-spacing:.06em; text-transform:uppercase}
+  .eq .arrow{color:var(--ink-3); font-size:12px}
+  .tags{display:flex; gap:5px; flex-wrap:wrap}
+  .tag{
+    font-size:9px; letter-spacing:.09em; text-transform:uppercase;
+    padding:2px 5px; border:1px solid var(--line); border-radius:2px; color:var(--ink-3);
+    white-space:nowrap;
+  }
+  .tag.on{border-color:currentColor}
+  .decay{display:flex; flex-direction:column; gap:5px}
+  .decay .dl{display:flex; justify-content:space-between; gap:10px}
+  .decay small{font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3)}
+  .decay .bar{height:4px; background:var(--line-soft); border-radius:2px; overflow:hidden}
+  .decay .bar i{display:block; height:100%; background:var(--alarm); width:0}
+
+  /* ---------- genealogy ---------- */
+  .tree{flex:1; min-height:0; overflow:auto; padding:12px 13px 16px}
+  .tree .top{display:flex; align-items:baseline; gap:7px; margin-bottom:8px; flex-wrap:wrap}
+  .tree h3{margin:0; font-size:9.5px; letter-spacing:.15em; text-transform:uppercase; font-weight:600}
+  .tree .cn{font-size:11px; color:var(--ink-3)}
+  .tree .meta{font-size:10px; color:var(--ink-3); font-variant-numeric:tabular-nums;
+              letter-spacing:.06em; text-transform:uppercase}
+  .tree .say{font-size:11px; color:var(--ink-3); line-height:1.5}
+  .tree svg{display:block}
+  .tree svg text{font-family:"Songti SC","Source Han Serif SC","Noto Serif CJK SC",
+                 "Noto Serif SC","Hiragino Mincho ProN","SimSun",serif}
+  .tree svg path{fill:none; stroke:var(--line); stroke-width:1}
+
+  /* ---------- panel ---------- */
+  .panel{background:var(--panel); overflow-y:auto; display:flex; flex-direction:column}
+  .panel section{padding:16px 20px; border-bottom:1px solid var(--line)}
+  .panel section:last-of-type{border-bottom:0}
+  .head{display:flex; align-items:baseline; gap:9px; margin-bottom:13px}
+  .head h2{margin:0; font-size:10.5px; letter-spacing:.15em; text-transform:uppercase; font-weight:600}
+  .head .cn{font-size:12px; color:var(--ink-3)}
+  .head .aside{margin-left:auto; font-size:10.5px; color:var(--ink-3); font-variant-numeric:tabular-nums}
+
+  .row{display:flex; gap:7px; flex-wrap:wrap}
+  button{
+    font:inherit; font-size:12.5px; color:var(--ink); background:var(--raise);
+    border:1px solid var(--line); border-radius:2px; padding:7px 12px; cursor:pointer;
+    transition:border-color .12s, color .12s, background .12s;
+  }
+  button:hover{border-color:var(--ink-3)}
+  button:focus-visible{outline:2px solid var(--focus); outline-offset:1px}
+  button.primary{min-width:88px; font-weight:500}
+  button.on{border-color:var(--focus); color:var(--focus)}
+  button.ghost{background:transparent; color:var(--ink-3); padding:5px 9px; font-size:11px}
+  button.ghost.on{color:var(--ink); border-color:var(--ink-3)}
+
+  .viewctl{display:grid; grid-template-columns:1fr 1fr; gap:0 14px; margin-top:14px;
+           padding-top:13px; border-top:1px solid var(--line-soft)}
+  .viewctl .ctrl{margin-bottom:6px}
+  .viewctl .full{grid-column:1/-1; display:flex; gap:9px; align-items:center}
+  .viewctl .full button{white-space:nowrap; flex:none}
+  .viewctl .full .scale{font-size:10.5px; color:var(--ink-3); font-variant-numeric:tabular-nums;
+                        line-height:1.35; min-width:0}
+
+  .presets{display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:9px}
+  .presets button{display:flex; align-items:baseline; gap:7px; text-align:left; padding:8px 10px}
+  .presets .cn{font-size:13px; color:var(--ink-3)}
+
+  .ctrl{display:grid; grid-template-columns:1fr auto; gap:3px 10px; align-items:center; margin-bottom:13px}
+  .ctrl:last-child{margin-bottom:0}
+  .ctrl label{font-size:12px; color:var(--ink-2)}
+  .ctrl output{font-size:12px; font-variant-numeric:tabular-nums; color:var(--ink)}
+  .ctrl .note{grid-column:1/-1; font-size:10.5px; color:var(--ink-3); line-height:1.35; margin-top:1px}
+  input[type=range]{grid-column:1/-1; width:100%; margin:3px 0 0; accent-color:var(--focus); height:16px}
+  input[type=range]:focus-visible{outline:2px solid var(--focus); outline-offset:3px}
+
+  .census{display:flex; height:9px; border-radius:2px; overflow:hidden; background:var(--line-soft); margin-bottom:11px}
+  .census i{display:block; transition:width .2s linear}
+  .legend{display:grid; grid-template-columns:1fr 1fr; gap:4px 14px}
+  .leg{display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--ink-2)}
+  .leg .sw{width:8px; height:8px; border-radius:1px; flex:none}
+  .leg .n{margin-left:auto; font-variant-numeric:tabular-nums; color:var(--ink-3)}
+
+  .log{display:flex; flex-direction:column; gap:0; max-height:420px; overflow-y:auto; margin:0 -20px; padding:0 20px}
+  .entry{display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:2px 11px; padding:8px 0; border-bottom:1px solid var(--line-soft)}
+  .entry:last-child{border-bottom:0}
+  .entry .t{font-size:10.5px; color:var(--ink-3); font-variant-numeric:tabular-nums; padding-top:4px}
+  .entry .body{display:flex; flex-direction:column; gap:3px; min-width:0}
+  .entry .f{display:flex; align-items:baseline; gap:7px; font-size:16px; line-height:1.2; flex-wrap:wrap}
+  .entry .f .sep{font-size:11px; color:var(--ink-3)}
+  .entry .g{font-size:11px; color:var(--ink-3); line-height:1.35; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .entry .g b{font-weight:500; color:var(--ink-2)}
+  .entry .n{font-size:10px; color:var(--ink-3); font-variant-numeric:tabular-nums;
+            border:1px solid var(--line); border-radius:2px; padding:2px 4px; align-self:center}
+  .empty-log{font-size:11.5px; color:var(--ink-3); padding:6px 0 2px; line-height:1.5}
+
+  .ticker{display:flex; flex-wrap:wrap; gap:4px; min-height:34px; align-content:flex-start}
+  .ticker .t{
+    display:flex; align-items:baseline; gap:4px; padding:4px 6px; border-radius:2px;
+    font-size:16px; line-height:1; border:1px solid transparent; background:var(--raise);
+  }
+  .ticker .t.fresh{border-color:currentColor}
+  .ticker .t small{font-size:9.5px; color:var(--ink-3); font-variant-numeric:tabular-nums}
+  .ticker .idle{font-size:11.5px; color:var(--ink-3)}
+
+  .tally{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1px; margin-bottom:13px;
+    background:var(--line); border:1px solid var(--line); border-radius:2px; overflow:hidden;
+  }
+  .tally div{background:var(--panel); padding:8px 9px; display:flex; flex-direction:column; gap:3px}
+  .tally b{font-size:16px; font-weight:500; font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+  .tally span{font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3)}
+
+  .species{display:flex; flex-wrap:wrap; gap:5px}
+  .species .s{
+    display:flex; align-items:baseline; gap:5px; border:1px solid var(--line);
+    border-radius:2px; padding:4px 7px; font-size:15px; background:var(--raise);
+  }
+  .species .s small{font-size:10px; color:var(--ink-3); font-variant-numeric:tabular-nums}
+
+  .colophon{padding:14px 20px 22px; font-size:10.5px; line-height:1.6; color:var(--ink-3)}
+  .colophon a{color:var(--ink-2)}
+
+  .lv0{color:var(--lv0)} .lv1{color:var(--lv1)} .lv2{color:var(--lv2)}
+  .lv3{color:var(--lv3)} .lv4{color:var(--lv4)} .lv5{color:var(--lv5)}
+  .syn{color:var(--synth)}
+
+  @media (max-width:1180px){
+    .app{grid-template-columns:1fr; height:auto; min-height:0}
+    .grip{display:none}
+    .stage{order:1; border-right:0; border-bottom:1px solid var(--line)}
+    .inspector{order:2; border-right:0; border-bottom:1px solid var(--line)}
+    .panel{order:3}
+    .dish{height:60vh; min-height:340px}
+    .vitals{margin-left:0; width:100%; justify-content:space-between}
+    .tree{max-height:430px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important}
+  }
+</style>
+
+<div class="app">
+  <aside class="inspector">
+    <div class="specimen">
+      <div class="ident">
+        <div class="glyph han" id="r-glyph">字</div>
+        <div class="who">
+          <span class="pinyin mono" id="r-pinyin">—</span>
+          <div class="tags" id="r-tags"></div>
+        </div>
+      </div>
+      <div class="gloss" id="r-gloss">Hover any cell in the dish to read its specimen card.</div>
+      <div class="eq han" id="r-eq"></div>
+      <div class="decay">
+        <div class="dl"><small id="r-decay-label">Patience</small><small id="r-decay-n">—</small></div>
+        <div class="bar"><i id="r-decay"></i></div>
+      </div>
+    </div>
+    <div class="tree" id="tree"></div>
+  </aside>
+
+  <div class="grip" id="grip-l" role="separator" aria-orientation="vertical"
+       tabindex="0" aria-label="Resize the inspector column"
+       title="Drag to resize · double-click to reset"></div>
+
+  <div class="stage">
+    <div class="masthead">
+      <div class="brand">
+        <span class="seal han">字</span>
+        <div>
+          <h1>Radical Chemistry</h1>
+          <p class="tagline">A Game of Life whose reaction table is the Chinese writing system.</p>
+        </div>
+      </div>
+      <div class="vitals">
+        <div class="vital"><b id="v-tick">0</b><span>Tick</span></div>
+        <div class="vital"><b id="v-real">0</b><span>Characters found</span></div>
+      </div>
+    </div>
+
+    <div class="subhead">
+      <div class="gauge" title="How much of the reaction table this run has used. Every character has exactly one recipe, so this number is the same as Characters found in the header.">
+        <div class="row"><span class="k">Reaction table</span><span class="v" id="g-rx">—</span></div>
+        <div class="bar"><i id="gb-rx"></i></div>
+      </div>
+      <div class="gauge" title="Every distinct character that has ever occupied a cell. That is the ones built by bonding plus the raw components, which is why it runs ahead of Characters found.">
+        <div class="row"><span class="k"><b>Built</b> + <em>components</em> seen</span><span class="v" id="g-ch">—</span></div>
+        <div class="bar"><i id="gb-ch"></i><i id="gb-ch2"></i></div>
+      </div>
+      <div class="gauge" title="Distinct seed components this run has drawn. Nothing in the writing system builds a component, so it can be seen but never found.">
+        <div class="row"><span class="k">Components used</span><span class="v" id="g-co">—</span></div>
+        <div class="bar"><i id="gb-co"></i></div>
+      </div>
+    </div>
+
+    <div class="dish">
+      <div class="modes">
+        <button id="m-dish" class="on">Dish</button>
+        <button id="m-map">Semantic map</button>
+      </div>
+      <canvas id="grid"></canvas>
+      <div class="hint" id="hint">Drag to sow · scroll to zoom · shift-drag to pan</div>
+    </div>
+
+  </div>
+
+  <div class="grip" id="grip-r" role="separator" aria-orientation="vertical"
+       tabindex="0" aria-label="Resize the controls column"
+       title="Drag to resize · double-click to reset"></div>
+
+  <aside class="panel">
+    <section>
+      <div class="head"><h2>Run</h2><span class="cn han">運行</span><span class="aside" id="rate"></span></div>
+      <div class="row">
+        <button class="primary" id="b-play">Pause</button>
+        <button id="b-step">Step</button>
+        <button id="b-reset">Reseed</button>
+        <button id="b-clear">Empty</button>
+      </div>
+      <div class="presets" id="presets"></div>
+      <div class="viewctl">
+        <div class="ctrl">
+          <label for="c-world">World</label><output id="o-world"></output>
+          <input type="range" id="c-world" min="14" max="180" step="2">
+        </div>
+        <div class="ctrl">
+          <label for="c-zoom">Zoom</label><output id="o-zoom"></output>
+          <input type="range" id="c-zoom" min="0.4" max="6" step="0.05">
+        </div>
+        <div class="full">
+          <button class="ghost" id="b-fit">Fit to view</button>
+          <span class="scale mono" id="o-scale"></span>
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="head"><h2>Census</h2><span class="cn han">譜系</span><span class="aside" id="census-n"></span></div>
+      <div class="census" id="census"></div>
+      <div class="legend" id="legend"></div>
+    </section>
+    <section>
+      <div class="head"><h2>Coming out of the soup</h2><span class="cn han">近況</span>
+        <span class="aside" id="recent-n"></span></div>
+      <div class="ticker" id="recent"></div>
+    </section>
+    <section>
+      <div class="head">
+        <h2>Discoveries</h2><span class="cn han">發現</span>
+        <span class="aside row" style="gap:4px">
+          <button class="ghost on" data-filter="all">All</button>
+          <button class="ghost" data-filter="real">Real</button>
+          <button class="ghost" data-filter="novel">Novel</button>
+        </span>
+      </div>
+      <div class="tally" id="tally"></div>
+      <div class="log" id="log"></div>
+      <div class="row" style="margin-top:11px">
+        <button class="ghost" id="b-copy">Copy discovery list</button>
+      </div>
+    </section>
+    <section>
+      <div class="head"><h2>Standing population</h2><span class="cn han">現存</span></div>
+      <div class="species" id="species"></div>
+    </section>
+    <section>
+      <div class="head"><h2>Conditions</h2><span class="cn han">參數</span></div>
+      <div id="controls"></div>
+    </section>
+
+    <div class="colophon">
+      <span id="colophon-stats"></span><br>
+      Nothing builds a component, so a component is seen but never <i>found</i>:
+      characters seen = characters found + components used.<br>
+      No combination rule is hand-written. Reactions from <b>makemeahanzi</b>,
+      frequency from <b>CC-CEDICT</b>.
+    </div>
+  </aside>
+</div>
+
+<script>
+const DATA = /*__HANZI_DATA__*/ null;
+(function(){
+"use strict";
+const CH = DATA.chars, RX = DATA.recipes, DC = DATA.decomp, ATOMS = DATA.atoms;
+const OPS = ["⿰","⿱","⿴","⿵","⿸","⿺","⿻"];
+const OPNAME = {"⿰":"side by side","⿱":"one above the other","⿲":"three columns","⿳":"three rows",
+  "⿴":"one enclosing the other","⿵":"capped","⿶":"based","⿷":"framed on the left",
+  "⿸":"upper left","⿹":"upper right","⿺":"lower left","⿻":"overlaid"};
+/* The ideographic description characters themselves are missing from plenty of
+   system fonts, so an arrangement is always named in words instead. */
+const disp = c => (c && c.length === 3 && OPNAME[c[0]]) ? c.slice(1) : c;
+
+/* ---------- weighted atom sampling ---------- */
+const CUM = []; let TOT = 0;
+for (const a of ATOMS){ TOT += a[1]; CUM.push(TOT); }
+function randAtom(){
+  let r = Math.random()*TOT, lo = 0, hi = CUM.length-1;
+  while (lo < hi){ const m = (lo+hi)>>1; if (CUM[m] < r) lo = m+1; else hi = m; }
+  return ATOMS[lo][0];
+}
+
+/* ---------- the semantic map ----------
+   Every character carries an x/y derived offline from tf-idf over its English
+   glosses and the glosses of every CC-CEDICT word it appears in, reduced by SVD
+   and projected with t-SNE. Nearby dots mean related meanings. */
+const REGIONS = DATA.regions || [];
+const MCH = [];
+for (const c in CH) if (CH[c].x !== undefined) MCH.push(c);
+const MX = new Float32Array(MCH.length), MY = new Float32Array(MCH.length);
+for (let i=0; i<MCH.length; i++){
+  MX[i] = CH[MCH[i]].x / 4000; MY[i] = CH[MCH[i]].y / 4000;
+}
+let standingSet = new Set();
+
+/* ---------- parameters ---------- */
+const S_MAX = 40, P_MAX = 12;
+const P = { speed:9, starve:6, pressure:6, mobility:.45, mutation:.0015, rain:3,
+            birth:3, lonely:1, crowd:7, recall:0,
+            density:.32, moore:true, cols:44, rows:28 };
+
+const PRESETS = [
+  { key:"soup",    en:"Primordial soup", cn:"原湯",
+    p:{starve:6,  pressure:6,  mobility:.45, mutation:.0015, rain:3, density:.32,
+       birth:3, lonely:1, crowd:7, recall:0} },
+  { key:"conway",  en:"Conway's rules",  cn:"康威",
+    p:{starve:S_MAX, pressure:P_MAX, mobility:.10, mutation:.001, rain:1, density:.34,
+       birth:3, lonely:2, crowd:3, recall:0} },
+  { key:"desert",  en:"Harsh desert",    cn:"荒漠",
+    p:{starve:2,  pressure:5,  mobility:.75, mutation:.001, rain:2,  density:.20,
+       birth:3, lonely:1, crowd:7, recall:0} },
+  { key:"jungle",  en:"Dense jungle",    cn:"密林",
+    p:{starve:18, pressure:5,  mobility:.30, mutation:.004, rain:7,  density:.55,
+       birth:2, lonely:0, crowd:8, recall:0} }
+];
+
+const CONTROLS = [
+  { k:"starve",   label:"Patience", min:1, max:S_MAX, step:1,
+    fmt:v => v>=S_MAX ? "∞" : v + " ticks",
+    note:"Ticks without bonding before starving, multiplied by level." },
+  { k:"pressure", label:"Crowding limit", min:2, max:P_MAX, step:1,
+    fmt:v => v>=P_MAX ? "never" : v + " neighbours",
+    note:"A character this hemmed in breaks back into its two parts." },
+  { k:"mobility", label:"Mobility", min:0, max:1, step:.05,
+    fmt:v => Math.round(v*100)+"%",
+    note:"Chance of drifting into an empty neighbour, divided by level." },
+  { k:"mutation", label:"Mis-bonding", min:0, max:.02, step:.0005,
+    fmt:v => (v*100).toFixed(2)+"%",
+    note:"Chance an invalid pair fuses into a character that does not exist." },
+  { k:"birth",    label:"Birth", min:2, max:5, step:1,
+    fmt:v => "exactly " + v,
+    note:"An empty square with this many neighbours comes alive, inheriting from one." },
+  { k:"lonely",   label:"Death by isolation", min:0, max:4, step:1,
+    fmt:v => v === 0 ? "off" : "under " + v,
+    note:"Too few neighbours and a piece dies out." },
+  { k:"crowd",    label:"Death by overcrowding", min:3, max:8, step:1,
+    fmt:v => v >= 8 ? "off" : "over " + v,
+    note:"Keeping this on matters: a dish that fills up completely stops mixing. Classic Conway is 3 · under 2 · over 3." },
+  { k:"rain",     label:"Component rain", min:0, max:40, step:1,
+    fmt:v => v + "/tick",
+    note:"New components seeded each tick." },
+  { k:"recall",   label:"Character rain", min:0, max:40, step:1,
+    fmt:v => v === 0 ? "off" : v + "/tick",
+    note:"Seeds characters this run has already discovered back into the dish, so deep compounds need not be rebuilt from components every time." },
+  { k:"speed",    label:"Speed", min:1, max:60, step:1,
+    fmt:v => v + " ticks/s", note:"" }
+];
+
+/* ---------- state ---------- */
+let W = P.cols, H = P.rows, N = W*H;
+let cells = new Array(N).fill(null);
+let NB = null;
+const S = { tick:0, bonds:0, splits:0, deaths:0, births:0, repeats:0,
+            real:0, novel:0, running:true };
+let recent = [], found = [];
+/* how much of the writing system this run has touched */
+let seenChars = new Set(), seenComp = new Set(), seenRx = new Set();
+let species = new Map();
+let log = [];
+let logFilter = "all";
+let hovered = -1, lastFormed = null, logDirty = true, panelDirty = true;
+
+const cv = document.getElementById("grid"), ctx = cv.getContext("2d", { alpha:false });
+let cs = 20, ox = 0, oy = 0, cw = 0, chh = 0, fitCS = 20, unit = 20;
+let mode = "dish", hoverChar = null;
+const views = { dish:{ zoom:1, px:0, py:0 }, map:{ zoom:1, px:0, py:0 } };
+let view = views.dish;
+const ZOOM = { dish:[.4, 6], map:[.6, 14] };
+const mapFit = () => Math.min(cw, chh) * .92;
+
+/* ---------- theme-aware colours ---------- */
+let COL = {};
+function readColors(){
+  const s = getComputedStyle(document.documentElement);
+  const get = n => s.getPropertyValue(n).trim();
+  COL = {
+    lv:[get("--lv0"),get("--lv1"),get("--lv2"),get("--lv3"),get("--lv4"),get("--lv5")].map(hex2rgb),
+    synth:hex2rgb(get("--synth")), alarm:hex2rgb(get("--alarm")),
+    dish:get("--dish"), dot:get("--dot")
+  };
+}
+function hex2rgb(h){
+  h = h.replace("#","");
+  if (h.length === 3) h = h.split("").map(c=>c+c).join("");
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function rgba(c,a){ return "rgba("+c[0]+","+c[1]+","+c[2]+","+a+")"; }
+function mix(a,b,t){ return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t].map(Math.round); }
+readColors();
+if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readColors);
+
+/* ---------- helpers ---------- */
+const lvOf = c => CH[c] ? CH[c].l : 0;
+const lvClamp = l => Math.min(5, l);
+function patienceOf(c){
+  if (P.starve >= S_MAX) return Infinity;
+  return c.synth ? P.starve : P.starve * (c.lv + 1);
+}
+const patience = lv => P.starve >= S_MAX ? Infinity : P.starve * (lv+1);
+function mk(c, lv, from, synth){
+  if (!synth && CH[c]){
+    seenChars.add(c);
+    if (CH[c].l === 0) seenComp.add(c);
+  }
+  return { c:c, lv:lv, t:0, cool:0, glow:1, born:S.tick, from:from||null, synth:!!synth };
+}
+function shuffle(a){
+  for (let i=a.length-1; i>0; i--){ const j = (Math.random()*(i+1))|0; const t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+function buildNB(){
+  const o8 = [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]];
+  const o4 = [[0,-1],[-1,0],[1,0],[0,1]];
+  const off = P.moore ? o8 : o4;
+  NB = new Array(N);
+  for (let y=0; y<H; y++) for (let x=0; x<W; x++){
+    const a = new Int32Array(off.length);
+    for (let k=0; k<off.length; k++){
+      a[k] = ((y+off[k][1]+H)%H)*W + ((x+off[k][0]+W)%W);
+    }
+    NB[y*W+x] = a;
+  }
+}
+function pickRecipe(rs){
+  if (rs.length === 1) return rs[0];
+  let tw = 0; const w = [];
+  for (const r of rs){ const f = (CH[r[0]] ? CH[r[0]].f : 0) + 1; w.push(f); tw += f; }
+  let x = Math.random()*tw;
+  for (let k=0; k<rs.length; k++){ x -= w[k]; if (x <= 0) return rs[k]; }
+  return rs[rs.length-1];
+}
+
+/* ---------- the tick ---------- */
+function tick(){
+  S.tick++;
+  const acted = new Uint8Array(N), gone = new Uint8Array(N);
+  const occ = [];
+  for (let i=0; i<N; i++) if (cells[i]) occ.push(i);
+  shuffle(occ);
+
+  /* 1 — synthesis */
+  for (const i of occ){
+    if (gone[i] || acted[i]) continue;
+    const a = cells[i]; if (!a || a.cool > 0) continue;
+    const nb = NB[i], off = (Math.random()*nb.length)|0;
+    /* one roll per piece per tick, so the slider means what it says */
+    const misbond = P.mutation > 0 && Math.random() < P.mutation;
+    for (let k=0; k<nb.length; k++){
+      const j = nb[(k+off) % nb.length];
+      if (gone[j] || acted[j]) continue;
+      const b = cells[j]; if (!b || b.cool > 0) continue;
+      const rs = RX[a.c < b.c ? a.c+"|"+b.c : b.c+"|"+a.c];
+      let res = null, op = null, synth = false;
+      if (rs){ const p = pickRecipe(rs); res = p[0]; op = p[1]; }
+      else if (misbond && a.c.length === 1 && b.c.length === 1){
+        op = OPS[(Math.random()*OPS.length)|0]; res = op + a.c + b.c; synth = true;
+      }
+      if (!res) continue;
+      const lv = synth ? 1 + Math.max(a.lv, b.lv) : lvOf(res);
+      cells[i] = mk(res, lv, [a.c, b.c, op], synth);
+      cells[j] = null; gone[j] = 1; acted[i] = 1;
+      record(res, synth, [a.c, b.c, op], lv);
+      break;
+    }
+  }
+
+  /* 2 — starvation */
+  for (let i=0; i<N; i++){
+    const c = cells[i]; if (!c) continue;
+    if (c.cool > 0) c.cool--;
+    if (acted[i]){ c.t = 0; continue; }
+    c.t++;
+    if (c.t > patienceOf(c)){ cells[i] = null; S.deaths++; }
+  }
+
+  /* 3 — the life layer: birth by inheritance, death by isolation or crowding */
+  {
+    const cnt = new Int16Array(N);
+    for (let i=0; i<N; i++) if (cells[i]) for (const j of NB[i]) cnt[j]++;
+    const born = [], died = [];
+    for (let i=0; i<N; i++){
+      const c = cells[i];
+      if (c){
+        if ((P.lonely > 0 && cnt[i] < P.lonely) || (P.crowd < 8 && cnt[i] > P.crowd)) died.push(i);
+      } else if (cnt[i] === P.birth){
+        const par = [];
+        for (const j of NB[i]) if (cells[j] && !cells[j].synth) par.push(cells[j]);
+        if (par.length) born.push([i, par[(Math.random()*par.length)|0]]);
+      }
+    }
+    for (const i of died){ cells[i] = null; S.deaths++; }
+    for (const b of born){
+      if (cells[b[0]]) continue;
+      const par = b[1];
+      const c = mk(par.c, par.lv, par.from, par.synth);
+      c.glow = .55; c.t = Math.min(par.t, 1);
+      cells[b[0]] = c;
+      S.births++;
+      if (par.lv > 0) countAgain(par.c);
+    }
+  }
+
+  /* 4 — crowding breaks characters back apart */
+  if (P.pressure < P_MAX){
+    for (const i of occ){
+      const c = cells[i];
+      /* a bond that just formed gets a moment to settle */
+      if (!c || acted[i] || c.lv === 0 || S.tick - c.born < 3) continue;
+      const d = DC[c.c] || c.from;
+      if (!d) continue;
+      let cnt = 0; const empties = [];
+      for (const j of NB[i]){ if (cells[j]) cnt++; else empties.push(j); }
+      if (cnt >= P.pressure + Math.min(2, c.lv - 1) && empties.length){
+        const j = empties[(Math.random()*empties.length)|0];
+        cells[i] = mk(d[0], lvOf(d[0])); cells[i].cool = 3;
+        cells[j] = mk(d[1], lvOf(d[1])); cells[j].cool = 3;
+        S.splits++;
+      }
+    }
+  }
+
+  /* 5 — diffusion */
+  const move = [];
+  for (let i=0; i<N; i++) if (cells[i]) move.push(i);
+  shuffle(move);
+  for (const i of move){
+    const c = cells[i]; if (!c) continue;
+    if (Math.random() >= P.mobility / (c.lv + 1)) continue;
+    const nb = NB[i], j = nb[(Math.random()*nb.length)|0];
+    if (!cells[j]){ cells[j] = c; cells[i] = null; }
+  }
+
+  /* 6 — component rain */
+  for (let k=0; k<P.rain; k++){
+    for (let a=0; a<14; a++){
+      const i = (Math.random()*N)|0;
+      if (!cells[i]){ const c = mk(randAtom(), 0); c.glow = .35; cells[i] = c; break; }
+    }
+  }
+
+  /* 7 — character rain: hand back something the run already worked out */
+  if (P.recall > 0 && found.length){
+    for (let k=0; k<P.recall; k++){
+      for (let a=0; a<14; a++){
+        const i = (Math.random()*N)|0;
+        if (!cells[i]){
+          const ch = found[(Math.random()*found.length)|0];
+          const c = mk(ch, lvOf(ch));
+          c.glow = .5;
+          cells[i] = c;
+          break;
+        }
+      }
+    }
+  }
+  panelDirty = true;
+}
+
+function record(c, synth, from, lv){
+  S.bonds++;
+  if (!synth){
+    const a = from[0], b = from[1];
+    seenRx.add((a < b ? a + "|" + b : b + "|" + a) + ">" + c);
+  }
+  let s = species.get(c), fresh = false;
+  if (!s){
+    fresh = true;
+    s = { c:c, first:S.tick, count:0, copies:0, synth:synth, from:from, lv:lv };
+    species.set(c, s);
+    if (synth) S.novel++; else { S.real++; found.push(c); }
+    log.unshift(s);
+    if (log.length > 260) log.pop();
+  } else {
+    S.repeats++;
+  }
+  s.count++;
+  lastFormed = s;
+  recent.unshift({ c:c, tick:S.tick, fresh:fresh, synth:synth, n:s.count, from:from });
+  if (recent.length > 40) recent.pop();
+  logDirty = true;
+}
+
+/* a piece copied into an empty square by the birth rule, not built from parts */
+function countAgain(c){
+  const s = species.get(c);
+  if (s) s.copies++;
+}
+
+/* ---------- seeding ---------- */
+function reseed(){
+  cells = new Array(N).fill(null);
+  for (let i=0; i<N; i++) if (Math.random() < P.density) cells[i] = mk(randAtom(), 0);
+  S.tick = 0; S.bonds = 0; S.splits = 0; S.deaths = 0; S.births = 0;
+  S.repeats = 0; S.real = 0; S.novel = 0;
+  species = new Map(); log = []; recent = []; found = []; lastFormed = null;
+  seenChars = new Set(); seenComp = new Set(); seenRx = new Set();
+  treePlaceholder();
+  logDirty = panelDirty = true;
+}
+function clearDish(){
+  cells = new Array(N).fill(null);
+  panelDirty = true;
+}
+
+/* ---------- rendering ---------- */
+function resize(){
+  const r = cv.parentElement.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cw = Math.max(1, Math.floor(r.width)); chh = Math.max(1, Math.floor(r.height));
+  cv.width = cw*dpr; cv.height = chh*dpr;
+  cv.style.width = cw+"px"; cv.style.height = chh+"px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  layout();
+}
+
+/* Zoom 1 fits the whole world in the dish; beyond that the view pans.
+   The map uses the same machinery, with the unit square in place of the grid. */
+function unitFor(z){
+  return mode === "dish" ? Math.max(2, Math.min(cw/W, chh/H) * z)
+                         : Math.max(120, mapFit() * z);
+}
+function layout(){
+  fitCS = Math.min(cw/W, chh/H);
+  unit = unitFor(view.zoom);
+  cs = unit;
+  const gw = mode === "dish" ? cs*W : unit, gh = mode === "dish" ? cs*H : unit;
+  if (gw <= cw){ ox = Math.round((cw-gw)/2); view.px = ox; }
+  else { view.px = Math.min(0, Math.max(cw-gw, view.px)); ox = Math.round(view.px); }
+  if (gh <= chh){ oy = Math.round((chh-gh)/2); view.py = oy; }
+  else { view.py = Math.min(0, Math.max(chh-gh, view.py)); oy = Math.round(view.py); }
+  cv.classList.toggle("pannable", gw > cw || gh > chh);
+}
+function zoomAt(mult, mx, my){
+  const gx = (mx - ox)/unit, gy = (my - oy)/unit;
+  const lim = ZOOM[mode];
+  const z = Math.max(lim[0], Math.min(lim[1], view.zoom * mult));
+  if (z === view.zoom) return;
+  view.zoom = z;
+  const nu = unitFor(z);
+  view.px = mx - gx*nu; view.py = my - gy*nu;
+  layout(); syncView();
+}
+function fitView(){ view.zoom = 1; view.px = view.py = 0; layout(); syncView(); }
+function setMode(m){
+  if (mode === m) return;
+  mode = m; view = views[m]; hoverChar = null; hovered = -1;
+  $("m-dish").classList.toggle("on", m === "dish");
+  $("m-map").classList.toggle("on", m === "map");
+  $("hint").textContent = m === "dish"
+    ? "Drag to sow · scroll to zoom · shift-drag to pan"
+    : "Every character placed by meaning · scroll to zoom in and read them";
+  layout(); syncView(); paintReadout();
+}
+
+/* Growing the world keeps everything already alive and seeds only the new ground. */
+function setWorld(cols){
+  cols = Math.max(14, Math.min(180, Math.round(cols)));
+  const rows = Math.max(8, Math.round(cols * (chh && cw ? chh/cw : .62)));
+  if (cols === W && rows === H) return;
+  const oW = W, oH = H, old = cells;
+  W = cols; H = rows; N = W*H; P.cols = W; P.rows = H;
+  const next = new Array(N).fill(null);
+  for (let y=0; y<Math.min(H,oH); y++)
+    for (let x=0; x<Math.min(W,oW); x++) next[y*W+x] = old[y*oW+x];
+  for (let y=0; y<H; y++) for (let x=0; x<W; x++){
+    if ((y < oH && x < oW) || Math.random() >= P.density) continue;
+    next[y*W+x] = mk(randAtom(), 0);
+  }
+  cells = next;
+  buildNB(); layout(); syncView(); panelDirty = true;
+}
+const HANFONT = '"Songti SC","Source Han Serif SC","Noto Serif CJK SC","Noto Serif SC","Hiragino Mincho ProN","Yu Mincho","SimSun","MS Mincho",serif';
+
+function draw(dt){
+  /* fade every flash, on screen or not, so nothing pops when panned into view */
+  const decay = Math.pow(.86, dt*60);
+  for (let i=0; i<N; i++){
+    const c = cells[i];
+    if (c && c.glow > .02) c.glow *= decay; else if (c) c.glow = 0;
+  }
+  ctx.fillStyle = COL.dish;
+  ctx.fillRect(0,0,cw,chh);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  if (mode === "dish") drawDish(); else drawMap();
+}
+
+function drawDish(){
+
+  const x0 = Math.max(0, Math.floor(-ox/cs)), x1 = Math.min(W-1, Math.ceil((cw-ox)/cs));
+  const y0 = Math.max(0, Math.floor(-oy/cs)), y1 = Math.min(H-1, Math.ceil((chh-oy)/cs));
+
+  /* the dish floor */
+  if (cs >= 7){
+    ctx.fillStyle = COL.dot;
+    for (let y=y0; y<=y1; y++) for (let x=x0; x<=x1; x++){
+      if (cells[y*W+x]) continue;
+      ctx.fillRect(ox + x*cs + cs/2 - .5, oy + y*cs + cs/2 - .5, 1, 1);
+    }
+  }
+
+  for (let gy=y0; gy<=y1; gy++) for (let gx=x0; gx<=x1; gx++){
+    const i = gy*W + gx;
+    const c = cells[i]; if (!c) continue;
+    const x = ox + gx*cs + cs/2, y = oy + gy*cs + cs/2;
+    const pat = patienceOf(c);
+    const wear = pat === Infinity ? 0 : Math.min(1, c.t/pat);
+    let col = c.synth ? COL.synth : COL.lv[lvClamp(c.lv)];
+    if (wear > .7) col = mix(col, COL.alarm, (wear-.7)/.3);
+    const alpha = 1 - .62*wear;
+    const glyphs = disp(c.c).length;
+    const size = glyphs > 1 ? cs*.30 : cs*(.60 + Math.min(c.lv,5)*.035);
+    ctx.font = (c.lv >= 4 ? "600 " : "400 ") + size.toFixed(1) + "px " + HANFONT;
+    if (c.glow > .02){
+      ctx.shadowColor = rgba(col, Math.min(.9, c.glow));
+      ctx.shadowBlur = cs * .85 * c.glow;
+    } else ctx.shadowBlur = 0;
+    ctx.fillStyle = rgba(col, alpha);
+    ctx.fillText(disp(c.c), x, y);
+  }
+  ctx.shadowBlur = 0;
+
+  if (hovered >= 0 && cells[hovered]){
+    const x = ox + (hovered % W)*cs, y = oy + ((hovered/W)|0)*cs;
+    ctx.strokeStyle = rgba(COL.lv[0], .85); ctx.lineWidth = 1;
+    ctx.strokeRect(Math.round(x)+.5, Math.round(y)+.5, Math.round(cs)-1, Math.round(cs)-1);
+  }
+}
+
+function drawMap(){
+  const u = unit, R = 4000;
+  const px = v => ox + v*u;
+
+  /* region names, drawn under everything */
+  if (u < 14000){
+    ctx.font = "500 " + Math.max(9, Math.min(16, u*.013)).toFixed(0)
+      + 'px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillStyle = rgba(COL.lv[0], .45);
+    for (const r of REGIONS){
+      const x = px(r.x/R), y = oy + r.y/R*u;
+      if (x < -90 || x > cw+90 || y < -30 || y > chh+30) continue;
+      ctx.fillText(r.t.toUpperCase(), x, y);
+    }
+  }
+
+  /* the whole writing system, unlit */
+  const glyphs = u > 2200;
+  ctx.fillStyle = rgba(COL.lv[0], .28);
+  for (let i=0; i<MCH.length; i++){
+    if (species.has(MCH[i])) continue;
+    const x = px(MX[i]), y = oy + MY[i]*u;
+    if (x < -6 || x > cw+6 || y < -6 || y > chh+6) continue;
+    ctx.fillRect(x-.7, y-.7, 1.4, 1.4);
+  }
+  if (u > 5200){
+    ctx.fillStyle = rgba(COL.lv[0], .3);
+    ctx.font = "400 12px " + HANFONT;
+    for (let i=0; i<MCH.length; i++){
+      if (species.has(MCH[i])) continue;
+      const x = px(MX[i]), y = oy + MY[i]*u;
+      if (x < -14 || x > cw+14 || y < -14 || y > chh+14) continue;
+      ctx.fillText(MCH[i], x, y);
+    }
+  }
+
+  /* where the last bonds travelled: parents to child */
+  ctx.lineWidth = 1;
+  for (let k=0; k<Math.min(14, recent.length); k++){
+    const r = recent[k];
+    const kid = CH[r.c];
+    if (!kid || kid.x === undefined || !r.from) continue;
+    const a = (1 - k/20) * .2;
+    for (let q=0; q<2; q++){
+      const pe = CH[r.from[q]];
+      if (!pe || pe.x === undefined) continue;
+      ctx.strokeStyle = rgba(COL.lv[lvClamp(lvOf(r.c))], a);
+      ctx.beginPath();
+      ctx.moveTo(px(pe.x/R), oy + pe.y/R*u);
+      ctx.lineTo(px(kid.x/R), oy + kid.y/R*u);
+      ctx.stroke();
+    }
+  }
+
+  /* everything the run has discovered */
+  ctx.font = "500 " + Math.max(12, Math.min(30, u*.006)).toFixed(0) + "px " + HANFONT;
+  for (const s of species.values()){
+    if (s.synth) continue;
+    const e = CH[s.c];
+    if (!e || e.x === undefined) continue;
+    const x = px(e.x/R), y = oy + e.y/R*u;
+    if (x < -24 || x > cw+24 || y < -24 || y > chh+24) continue;
+    const col = COL.lv[lvClamp(s.lv)];
+    const alive = standingSet.has(s.c);
+    if (glyphs){
+      ctx.fillStyle = rgba(col, alive ? 1 : .5);
+      ctx.fillText(s.c, x, y);
+    } else {
+      const r = 1.7 + Math.min(5.5, Math.log2(1 + s.count) * 1.15);
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832);
+      ctx.fillStyle = rgba(col, alive ? .95 : .45); ctx.fill();
+      if (alive){
+        ctx.beginPath(); ctx.arc(x, y, r + 2.5, 0, 6.2832);
+        ctx.strokeStyle = rgba(col, .35); ctx.stroke();
+      }
+    }
+  }
+
+  if (hoverChar && CH[hoverChar] && CH[hoverChar].x !== undefined){
+    const e = CH[hoverChar];
+    const x = px(e.x/R), y = oy + e.y/R*u;
+    ctx.beginPath(); ctx.arc(x, y, 9, 0, 6.2832);
+    ctx.strokeStyle = rgba(COL.lv[0], .9); ctx.lineWidth = 1; ctx.stroke();
+  }
+}
+
+function nearestChar(mx, my){
+  let best = -1, bd = Infinity;
+  for (let i=0; i<MCH.length; i++){
+    const dx = ox + MX[i]*unit - mx, dy = oy + MY[i]*unit - my;
+    let d = dx*dx + dy*dy;
+    if (species.has(MCH[i])) d *= .3;   /* discovered dots are easier to grab */
+    if (d < bd){ bd = d; best = i; }
+  }
+  return bd <= 22*22 ? MCH[best] : null;
+}
+
+/* ---------- genealogy ----------
+   A character's decomposition tree. Its depth is its level by construction, so
+   deeper characters really do draw bigger trees. */
+function buildTree(ch, path, rootFrom){
+  const d = (path.length === 0 && rootFrom) ? rootFrom : DC[ch];
+  if (!d || path.indexOf(ch) >= 0 || path.length > 8) return { c:ch, kids:null, h:0 };
+  const p = path.concat(ch);
+  const kids = [buildTree(d[0], p), buildTree(d[1], p)];
+  return { c:ch, op:d[2], kids:kids, h:1 + Math.max(kids[0].h, kids[1].h) };
+}
+
+const TREE = { col:23, row:14, pad:4, r:6 };
+let treeFor = null;
+
+function treeHead(meta){
+  return '<div class="top"><h3>Genealogy</h3><span class="cn han">系譜</span>'
+       + (meta ? '<span class="meta">' + meta + '</span>' : '') + '</div>';
+}
+function treePlaceholder(){
+  treeFor = null;
+  $("tree").innerHTML = treeHead("") + '<p class="say">Hover a character — in the dish, '
+    + 'on the map, or anywhere in the log — to see how the writing system builds it. '
+    + 'The tree grows one generation per level.</p>';
+}
+
+function showTree(ch){
+  if (!ch || ch === treeFor) return;
+  treeFor = ch;
+  const sp = species.get(ch);
+  const root = buildTree(ch, [], sp && sp.synth ? sp.from : null);
+  const el = $("tree");
+  if (!root.kids){
+    el.innerHTML = treeHead("irreducible")
+      + '<p class="say"><b class="lv0" style="font-size:15px">' + esc(disp(ch))
+      + '</b> is a component. Nothing in the writing system builds it —'
+      + ' it has to be seeded.</p>';
+    return;
+  }
+
+  let rows = 0;
+  const flat = [];
+  (function place(n){
+    if (!n.kids) n.row = rows++;
+    else { place(n.kids[0]); place(n.kids[1]); n.row = (n.kids[0].row + n.kids[1].row)/2; }
+    flat.push(n);
+  })(root);
+
+  const X = n => TREE.pad + n.h * TREE.col;
+  const Y = n => TREE.pad + n.row * TREE.row + TREE.row/2;
+  const w = TREE.pad*2 + root.h * TREE.col + 14;
+  const h = TREE.pad*2 + rows * TREE.row;
+
+  let paths = "", glyphs = "";
+  for (const n of flat){
+    if (n.kids){
+      const jx = X(n) - TREE.col*.45;
+      for (const k of n.kids){
+        paths += '<path d="M' + (X(k)+TREE.r) + ',' + Y(k) + ' H' + jx + ' V' + Y(n) + '"/>';
+      }
+      paths += '<path d="M' + jx + ',' + Y(n) + ' H' + (X(n)-TREE.r) + '"/>';
+    }
+    const e = CH[n.c];
+    const lv = n.kids ? lvClamp(lvOf(n.c)) : 0;
+    const leaf = !n.kids;
+    glyphs += '<text x="' + X(n) + '" y="' + Y(n) + '" text-anchor="middle"'
+      + ' dominant-baseline="central" font-size="' + (leaf ? 11 : 12) + '"'
+      + ' class="lv' + lv + '"' + (leaf ? '' : ' font-weight="500"')
+      + ' fill="currentColor">'
+      + '<title>' + esc(cardTitle(n.c)) + '</title>' + esc(disp(n.c)) + '</text>';
+  }
+
+  const leaves = rows, gens = root.h;
+  el.innerHTML = treeHead((sp && sp.synth ? "invented" : "level " + gens)
+      + ' · ' + leaves + ' components')
+    + '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '"'
+    + ' role="img" aria-label="decomposition tree of ' + esc(disp(ch)) + '">'
+    + paths + glyphs + '</svg>';
+}
+
+/* ---------- panel rendering ---------- */
+const $ = id => document.getElementById(id);
+const LVNAME = ["Components","Level 1","Level 2","Level 3","Level 4","Level 5+"];
+
+function paintPanel(){
+  let pop = 0; const census = [0,0,0,0,0,0]; let synth = 0;
+  const standing = new Map();
+  standingSet = new Set();
+  for (let i=0; i<N; i++){
+    const c = cells[i]; if (!c) continue;
+    pop++;
+    standingSet.add(c.c);
+    if (c.synth) synth++; else census[lvClamp(c.lv)]++;
+    if (c.lv > 0) standing.set(c.c, (standing.get(c.c)||0) + 1);
+  }
+  gauge("rx", seenRx.size, DATA.meta.reactions);
+  gauge("ch", seenChars.size, DATA.meta.characters, [S.real, seenComp.size]);
+  gauge("co", seenComp.size, DATA.meta.atoms);
+
+  $("v-tick").textContent = S.tick.toLocaleString();
+  $("v-real").textContent = S.real.toLocaleString();
+  $("census-n").textContent = pop + " standing";
+
+  $("tally").innerHTML =
+      '<div><b>' + S.real.toLocaleString() + '</b><span>Real characters</span></div>'
+    + '<div><b>' + S.repeats.toLocaleString() + '</b><span>Duplicate builds</span></div>'
+    + '<div><b class="syn">' + S.novel.toLocaleString() + '</b><span>Non-existent</span></div>';
+
+  const total = Math.max(1, pop);
+  let bars = "", legend = "";
+  for (let l=0; l<6; l++){
+    bars += '<i style="width:' + (census[l]/total*100).toFixed(2) + '%;background:var(--lv'+l+')"></i>';
+    legend += '<div class="leg"><span class="sw" style="background:var(--lv'+l+')"></span>'
+            + LVNAME[l] + '<span class="n">' + census[l] + '</span></div>';
+  }
+  bars += '<i style="width:' + (synth/total*100).toFixed(2) + '%;background:var(--synth)"></i>';
+  legend += '<div class="leg"><span class="sw" style="background:var(--synth)"></span>Non-existent<span class="n">'+synth+'</span></div>';
+  $("census").innerHTML = bars;
+  $("legend").innerHTML = legend;
+
+  const top = [...standing.entries()].sort((a,b)=>b[1]-a[1]).slice(0,14);
+  $("species").innerHTML = top.length
+    ? top.map(([c,n]) => {
+        const sp = species.get(c);
+        const cls = sp && sp.synth ? "syn" : "lv" + lvClamp(CH[c] ? CH[c].l : 1);
+        return '<span class="s" data-c="'+esc(c)+'"><span class="han '+cls+'" title="'+esc(cardTitle(c))+'">'+esc(c)+'</span><small>'+n+'</small></span>';
+      }).join("")
+    : '<span class="empty-log">Nothing above component level is alive right now.</span>';
+
+  $("colophon-stats").innerHTML = "This run: " +
+    S.bonds.toLocaleString() + " bonds · " + S.births.toLocaleString() + " births · " +
+    S.splits.toLocaleString() + " breaks · " + S.deaths.toLocaleString() + " deaths.";
+}
+
+function paintRecent(){
+  const el = $("recent");
+  if (!recent.length){
+    el.innerHTML = '<span class="idle">Nothing has bonded yet.</span>';
+    $("recent-n").textContent = "";
+    return;
+  }
+  $("recent-n").textContent = S.bonds.toLocaleString() + " bonds";
+  el.innerHTML = recent.slice(0,22).map(r => {
+    const cls = r.synth ? "syn" : "lv" + lvClamp(species.get(r.c) ? species.get(r.c).lv : 1);
+    return '<span class="t ' + cls + (r.fresh ? " fresh" : "") + '" data-c="'
+      + esc(r.c) + '" title="'
+      + esc(cardTitle(r.c)) + (r.fresh ? " — first appearance" : "") + '">'
+      + '<span class="han">' + esc(disp(r.c)) + '</span>'
+      + '<small>' + (r.fresh ? "NEW" : "×" + r.n) + '</small></span>';
+  }).join("");
+}
+
+function gauge(id, n, d, parts){
+  $("g-" + id).innerHTML = n.toLocaleString() + ' <small>/ ' + d.toLocaleString() + '</small>';
+  const w = v => (v ? Math.max(v/d*100, .5) : 0) + "%";
+  if (parts){
+    /* the bar is drawn in two colours, so you can see that seen = built + components */
+    $("gb-" + id).style.width = w(parts[0]);
+    $("gb-" + id + "2").style.width = w(parts[1]);
+  } else {
+    $("gb-" + id).style.width = w(n);
+  }
+}
+
+function esc(s){ return String(s).replace(/[&<>"]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
+function cardTitle(c){
+  const e = CH[c];
+  return e ? (c + " " + (e.p||"") + (e.d ? " — " + e.d : "")) : disp(c) + " (not a character)";
+}
+
+function paintLog(){
+  const rows = log.filter(s => logFilter === "all" || (logFilter === "novel") === !!s.synth);
+  if (!rows.length){
+    $("log").innerHTML = '<div class="empty-log">'
+      + (S.tick === 0 ? "Press play. Every first appearance of a character gets logged here with the two parts that made it."
+                      : "No entries under this filter yet.") + '</div>';
+    return;
+  }
+  $("log").innerHTML = rows.slice(0,160).map(s => {
+    const e = CH[s.c] || null;
+    const cls = s.synth ? "syn" : "lv" + lvClamp(s.lv);
+    const op = s.from && s.from[2] ? s.from[2] : "";
+    const gloss = s.synth
+      ? '<b>no such character</b> · ' + esc(OPNAME[op] || "fused") + ' arrangement of ' + esc(s.from[0]) + ' and ' + esc(s.from[1])
+      : (e ? '<b>' + esc(e.p || "—") + '</b>' + (e.d ? ' · ' + esc(e.d) : "") : "");
+    return '<div class="entry" data-c="' + esc(s.c) + '">'
+      + '<span class="t mono">t' + String(s.first).padStart(4,"0") + '</span>'
+      + '<span class="body">'
+        + '<span class="f han">'
+          + '<span class="lv' + lvClamp(lvOf(s.from[0])) + '">' + esc(s.from[0]) + '</span>'
+          + '<span class="sep mono">+</span>'
+          + '<span class="lv' + lvClamp(lvOf(s.from[1])) + '">' + esc(s.from[1]) + '</span>'
+          + '<span class="sep mono">→</span>'
+          + '<span class="' + cls + '">' + esc(disp(s.c)) + '</span>'
+          + '<span class="sep mono">' + esc(OPNAME[op] || "") + '</span>'
+        + '</span>'
+        + '<span class="g">' + gloss + '</span>'
+      + '</span>'
+      + (s.count > 1 ? '<span class="n">×' + s.count + '</span>' : '')
+      + '</div>';
+  }).join("");
+}
+
+function paintReadout(){
+  const c = (mode === "dish" && hovered >= 0 && cells[hovered]) ? cells[hovered] : null;
+  let sp = null, ch = null, onMap = false;
+  if (c){
+    ch = c.c;
+  } else if (mode === "map" && hoverChar){
+    ch = hoverChar; sp = species.get(ch) || null; onMap = true;
+  } else {
+    sp = lastFormed; ch = sp ? sp.c : null;
+  }
+  const g = $("r-glyph");
+  if (!ch){
+    g.textContent = "字"; g.className = "glyph han";
+    $("r-pinyin").textContent = "—"; $("r-tags").innerHTML = "";
+    $("r-gloss").textContent = mode === "map"
+      ? "Every dot is a character, placed by what it means. Hover one to read it."
+      : "Hover any cell in the dish to read its specimen card.";
+    $("r-eq").innerHTML = ""; $("r-decay").style.width = "0%";
+    $("r-decay-n").textContent = "—";
+    $("r-decay").parentElement.style.display = "none";
+    return;
+  }
+  const e = CH[ch], synth = c ? c.synth : (sp ? sp.synth : false);
+  const lv = c ? c.lv : (sp ? sp.lv : lvOf(ch));
+  g.textContent = disp(ch);
+  g.className = "glyph han " + (synth ? "syn small" : "lv" + lvClamp(lv));
+  $("r-pinyin").textContent = e && e.p ? e.p : (synth ? "no reading" : "—");
+  $("r-gloss").textContent = e && e.d ? e.d
+    : (synth ? "A well-formed arrangement that no character actually uses." : "A structural component.");
+
+  const tags = [];
+  tags.push('<span class="tag ' + (synth ? "on syn" : "on lv"+lvClamp(lv)) + '">'
+    + (synth ? "Non-existent" : (lv === 0 ? "Component" : "Level " + lv)) + '</span>');
+  if (e && e.f) tags.push('<span class="tag">in ' + e.f.toLocaleString() + ' words</span>');
+  if (onMap && !sp) tags.push('<span class="tag">not built yet</span>');
+  else if (onMap && sp) tags.push('<span class="tag">found at t' + sp.first
+    + ' · ' + sp.count + '×</span>');
+  else if (!c && sp) tags.push('<span class="tag">last formed · t' + sp.first + '</span>');
+  $("r-tags").innerHTML = tags.join("");
+
+  const from = (c && c.from) || (sp && sp.from) || DC[ch];
+  $("r-eq").innerHTML = from
+    ? esc(from[0]) + '<span class="arrow mono">+</span>' + esc(from[1])
+      + '<span class="arrow mono">makes</span>' + esc(disp(ch))
+      + '<span class="op mono">' + esc(OPNAME[from[2]] || "") + '</span>'
+    : '<span class="op mono">irreducible — this one has to be seeded</span>';
+
+  const bar = $("r-decay").parentElement;
+  bar.style.display = (!onMap && c) ? "block" : "none";
+  if (onMap){
+    $("r-decay-label").textContent = sp ? "Times built" : "Status";
+    $("r-decay").style.width = "0%";
+    $("r-decay-n").textContent = sp
+      ? sp.count.toLocaleString() + "× · " + (standingSet.has(ch) ? "alive now" : "gone")
+      : "never formed in this run";
+  } else if (c){
+    const pat = patienceOf(c);
+    $("r-decay-label").textContent = "Starvation";
+    $("r-decay").style.width = (pat === Infinity ? 0 : Math.min(1, c.t/pat)*100) + "%";
+    $("r-decay-n").textContent = pat === Infinity ? "immortal" : c.t + " / " + pat + " ticks idle";
+  } else {
+    $("r-decay-label").textContent = "Occurrences";
+    $("r-decay").style.width = "0%";
+    $("r-decay-n").textContent = sp ? sp.count.toLocaleString() + "× formed" : "—";
+  }
+}
+
+/* ---------- controls ---------- */
+function buildControls(){
+  const wrap = $("controls");
+  wrap.innerHTML = CONTROLS.map(c =>
+    '<div class="ctrl"><label for="c-'+c.k+'">'+c.label+'</label>'
+    + '<output id="o-'+c.k+'"></output>'
+    + '<input type="range" id="c-'+c.k+'" min="'+c.min+'" max="'+c.max+'" step="'+c.step+'">'
+    + (c.note ? '<span class="note">'+c.note+'</span>' : '') + '</div>'
+  ).join("")
+  + '<div class="ctrl"><label>Neighbourhood</label><span class="row" style="gap:5px">'
+  + '<button class="ghost" id="n8">8 way</button><button class="ghost" id="n4">4 way</button></span>'
+  + '</div>';
+
+  for (const c of CONTROLS){
+    const el = $("c-"+c.k);
+    el.value = P[c.k];
+    el.addEventListener("input", () => {
+      P[c.k] = parseFloat(el.value);
+      syncControls();
+    });
+  }
+  $("c-world").addEventListener("input", ev => setWorld(parseInt(ev.target.value, 10)));
+  $("c-zoom").addEventListener("input", ev => {
+    const mult = parseFloat(ev.target.value) / view.zoom;
+    zoomAt(mult, cw/2, chh/2);
+  });
+  $("b-fit").addEventListener("click", fitView);
+  $("m-dish").addEventListener("click", () => setMode("dish"));
+  $("m-map").addEventListener("click", () => setMode("map"));
+
+  $("n8").addEventListener("click", () => { P.moore = true; buildNB(); syncControls(); });
+  $("n4").addEventListener("click", () => { P.moore = false; buildNB(); syncControls(); });
+
+  $("presets").innerHTML = PRESETS.map(p =>
+    '<button data-preset="'+p.key+'"><span class="cn han">'+p.cn+'</span>'+p.en+'</button>').join("");
+  $("presets").addEventListener("click", ev => {
+    const b = ev.target.closest("[data-preset]"); if (!b) return;
+    const p = PRESETS.find(x => x.key === b.dataset.preset);
+    Object.assign(P, p.p);
+    for (const c of CONTROLS) $("c-"+c.k).value = P[c.k];
+    reseed(); syncControls();
+  });
+}
+function syncView(){
+  const map = mode === "map";
+  $("c-world").value = W;
+  $("c-world").disabled = map;
+  $("c-world").parentElement.style.opacity = map ? .4 : 1;
+  $("c-zoom").min = ZOOM[mode][0]; $("c-zoom").max = ZOOM[mode][1];
+  $("c-zoom").value = view.zoom;
+  $("o-world").textContent = W + " × " + H;
+  $("o-zoom").textContent = "×" + view.zoom.toFixed(view.zoom < 10 ? 1 : 0);
+  $("o-scale").textContent = map
+    ? MCH.length.toLocaleString() + " characters placed · " + S.real.toLocaleString() + " lit"
+    : (W*H).toLocaleString() + " cells · " + cs.toFixed(cs < 10 ? 1 : 0) + "px each";
+}
+
+function syncControls(){
+  for (const c of CONTROLS) $("o-"+c.k).textContent = c.fmt(P[c.k]);
+  $("n8").classList.toggle("on", P.moore);
+  $("n4").classList.toggle("on", !P.moore);
+  $("rate").textContent = P.speed + "/s";
+  paintReadout();
+}
+
+$("b-play").addEventListener("click", () => {
+  S.running = !S.running;
+  $("b-play").textContent = S.running ? "Pause" : "Play";
+});
+$("b-step").addEventListener("click", () => { tick(); paintLog(); paintRecent(); paintPanel(); paintReadout(); });
+$("b-reset").addEventListener("click", () => { reseed(); paintLog(); paintRecent(); paintPanel(); paintReadout(); });
+$("b-clear").addEventListener("click", () => { clearDish(); paintPanel(); });
+$("b-copy").addEventListener("click", async ev => {
+  const lines = log.filter(s => !s.synth).map(s =>
+    s.from[0] + " + " + s.from[1] + " -> " + disp(s.c)
+    + (CH[s.c] ? "  " + (CH[s.c].p||"") + "  " + (CH[s.c].d||"") : "")
+    + "   [t" + s.first + ", ×" + s.count + "]");
+  try {
+    await navigator.clipboard.writeText(
+      "Radical Chemistry — " + lines.length + " characters discovered in " + S.tick + " ticks\n\n" + lines.join("\n"));
+    ev.target.textContent = "Copied " + lines.length + " entries";
+    setTimeout(() => { ev.target.textContent = "Copy discovery list"; }, 1800);
+  } catch (err){
+    ev.target.textContent = "Clipboard unavailable";
+    setTimeout(() => { ev.target.textContent = "Copy discovery list"; }, 1800);
+  }
+});
+document.querySelector(".panel").addEventListener("mouseover", ev => {
+  const el = ev.target.closest("[data-c]");
+  if (el) showTree(el.dataset.c);
+});
+document.querySelectorAll("[data-filter]").forEach(b => b.addEventListener("click", () => {
+  logFilter = b.dataset.filter;
+  document.querySelectorAll("[data-filter]").forEach(x => x.classList.toggle("on", x === b));
+  paintLog();
+}));
+
+/* ---------- resizable columns ---------- */
+const COLS = { "--insp":{ def:196, min:132, max:560 }, "--aside":{ def:376, min:280, max:560 } };
+const root = document.documentElement;
+const colWidth = v => parseFloat(getComputedStyle(root).getPropertyValue(v)) || COLS[v].def;
+
+function setCol(v, px){
+  const c = COLS[v];
+  const n = Math.max(c.min, Math.min(c.max, Math.round(px)));
+  root.style.setProperty(v, n + "px");
+  try { localStorage.setItem("rc" + v, n); } catch (err) { /* private window */ }
+  resize(); syncView();
+}
+for (const v in COLS){
+  try {
+    const saved = parseFloat(localStorage.getItem("rc" + v));
+    if (saved >= COLS[v].min && saved <= COLS[v].max) root.style.setProperty(v, saved + "px");
+  } catch (err) { /* private window */ }
+}
+
+function makeGrip(el, v, sign){
+  let from = 0, was = 0;
+  el.addEventListener("pointerdown", ev => {
+    el.setPointerCapture(ev.pointerId); el.classList.add("on");
+    from = ev.clientX; was = colWidth(v);
+    ev.preventDefault();
+  });
+  el.addEventListener("pointermove", ev => {
+    if (el.hasPointerCapture(ev.pointerId)) setCol(v, was + sign*(ev.clientX - from));
+  });
+  const done = () => el.classList.remove("on");
+  el.addEventListener("pointerup", done);
+  el.addEventListener("pointercancel", done);
+  el.addEventListener("dblclick", () => setCol(v, COLS[v].def));
+  el.addEventListener("keydown", ev => {
+    const d = ev.key === "ArrowLeft" ? -16 : ev.key === "ArrowRight" ? 16 : 0;
+    if (!d) return;
+    ev.preventDefault();
+    setCol(v, colWidth(v) + sign*d);
+  });
+}
+makeGrip($("grip-l"), "--insp", 1);
+makeGrip($("grip-r"), "--aside", -1);
+
+/* ---------- pointer ---------- */
+function cellAt(ev){
+  const r = cv.getBoundingClientRect();
+  const x = Math.floor((ev.clientX - r.left - ox)/cs), y = Math.floor((ev.clientY - r.top - oy)/cs);
+  return (x >= 0 && y >= 0 && x < W && y < H) ? y*W + x : -1;
+}
+let sowing = false, panning = false, panX = 0, panY = 0;
+cv.addEventListener("pointermove", ev => {
+  if (mode === "map" && !panning){
+    const r = cv.getBoundingClientRect();
+    hoverChar = nearestChar(ev.clientX - r.left, ev.clientY - r.top);
+    if (hoverChar) showTree(hoverChar);
+    paintReadout();
+    return;
+  }
+  if (panning){
+    view.px += ev.clientX - panX; view.py += ev.clientY - panY;
+    panX = ev.clientX; panY = ev.clientY;
+    layout(); syncView();
+    return;
+  }
+  hovered = cellAt(ev);
+  if (sowing && hovered >= 0 && !cells[hovered]) cells[hovered] = mk(randAtom(), 0);
+  if (hovered >= 0 && cells[hovered]) showTree(cells[hovered].c);
+  paintReadout();
+});
+cv.addEventListener("pointerdown", ev => {
+  cv.setPointerCapture(ev.pointerId);
+  if (ev.shiftKey || ev.button === 1){
+    panning = true; panX = ev.clientX; panY = ev.clientY;
+    cv.classList.add("panning");
+    ev.preventDefault();
+    return;
+  }
+  if (mode === "map") return;
+  sowing = true;
+  const i = cellAt(ev);
+  if (i >= 0 && !cells[i]) cells[i] = mk(randAtom(), 0);
+});
+function endDrag(){ sowing = panning = false; cv.classList.remove("panning"); }
+cv.addEventListener("pointerup", endDrag);
+cv.addEventListener("pointercancel", endDrag);
+cv.addEventListener("pointerleave", () => {
+  endDrag(); hovered = -1; hoverChar = null; paintReadout();
+});
+cv.addEventListener("wheel", ev => {
+  ev.preventDefault();
+  const r = cv.getBoundingClientRect();
+  zoomAt(Math.exp(-ev.deltaY * (ev.deltaMode === 1 ? .02 : .0016)),
+         ev.clientX - r.left, ev.clientY - r.top);
+}, { passive:false });
+
+/* ---------- loop ---------- */
+let last = performance.now(), acc = 0, uiAcc = 0;
+function frame(now){
+  const dt = Math.min(.1, (now - last)/1000); last = now;
+  if (S.running){
+    acc += dt;
+    const interval = 1/P.speed;
+    let guard = 0;
+    while (acc >= interval && guard < 8){ tick(); acc -= interval; guard++; }
+    if (acc > interval) acc = 0;
+  }
+  draw(dt);
+  uiAcc += dt;
+  if (uiAcc > .2){
+    uiAcc = 0;
+    if (logDirty){ paintLog(); paintRecent(); logDirty = false; }
+    if (panelDirty){ paintPanel(); paintReadout(); panelDirty = false;
+                     if (mode === "map") syncView(); }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- boot ---------- */
+buildNB();
+buildControls();
+reseed();
+resize();
+setWorld(P.cols);          /* square up the rows against the real dish aspect */
+new ResizeObserver(() => { resize(); syncView(); }).observe(cv.parentElement);
+syncControls(); syncView();
+treePlaceholder();
+paintLog(); paintRecent(); paintPanel(); paintReadout();
+for (let i=0; i<14; i++) tick();   /* open on a dish that is already reacting */
+paintLog(); paintRecent(); paintPanel(); paintReadout();
+requestAnimationFrame(frame);
+})();
+</script>

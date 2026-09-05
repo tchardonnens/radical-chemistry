@@ -1,0 +1,10 @@
+# raw dictionaries: large and re-downloadable with ./fetch_data.sh
+data/dictionary.txt
+data/cedict.txt
+# derived from data/hanzi.json by export_data.py
+data/world.tsv
+# build outputs
+dist/
+sim
+__pycache__/
+*.pyc
