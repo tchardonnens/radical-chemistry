@@ -1,5 +1,7 @@
 # Radical Chemistry — a Game of Life made of Chinese characters
 
+**Live: https://hanzi.thomascdnns.com**
+
 A cellular automaton whose reaction table *is* the Chinese writing system.
 Components (氵, 亻, 艹, 辶 …) drift across a grid, bond into real characters
 when the script says they combine that way, get born and die by Conway's
