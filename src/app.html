@@ -430,6 +430,8 @@ const DATA = /*__HANZI_DATA__*/ null;
 "use strict";
 const CH = DATA.chars, RX = DATA.recipes, DC = DATA.decomp, ATOMS = DATA.atoms;
 const OPS = ["⿰","⿱","⿴","⿵","⿸","⿺","⿻"];
+/* index order shared with the wasm engine; never reorder */
+const OPS_ALL = ["⿰","⿱","⿲","⿳","⿴","⿵","⿶","⿷","⿸","⿹","⿺","⿻"];
 const OPNAME = {"⿰":"side by side","⿱":"one above the other","⿲":"three columns","⿳":"three rows",
   "⿴":"one enclosing the other","⿵":"capped","⿶":"based","⿷":"framed on the left",
   "⿸":"upper left","⿹":"upper right","⿺":"lower left","⿻":"overlaid"};
@@ -596,8 +598,8 @@ function pickRecipe(rs){
   return rs[rs.length-1];
 }
 
-/* ---------- the tick ---------- */
-function tick(){
+/* ---------- the tick, in JavaScript (the fallback engine) ---------- */
+function jsTick(){
   S.tick++;
   const acted = new Uint8Array(N), gone = new Uint8Array(N);
   const occ = [];
@@ -752,18 +754,162 @@ function countAgain(c){
   if (s) s.copies++;
 }
 
-/* ---------- seeding ---------- */
-function reseed(){
+/* ================= the engine =================
+   The rules live in sim.rs and are compiled to WebAssembly. The JavaScript
+   below is a complete second implementation, kept as a fallback for anywhere
+   the wasm module will not instantiate (a strict Content-Security-Policy, for
+   instance). Whichever engine runs, it produces the same `cells` array and
+   feeds the same record(), so nothing downstream knows the difference. */
+const WASM_B64 = "/*__WASM_B64__*/";
+let ENGINE = null, WX = null, wStats = null;
+
+/* Index tables, built once from the data the page already carries, so no
+   second copy of the dictionary is shipped for the engine's benefit. */
+const NAMES = Object.keys(CH).sort();
+const CIDX = new Map(NAMES.map((c, i) => [c, i]));
+
+function marshal(X){
+  const n = NAMES.length;
+  const put = (arr, Ctor) => {
+    const p = X.alloc(Math.max(1, arr.length * Ctor.BYTES_PER_ELEMENT));
+    if (arr.length) new Ctor(X.memory.buffer, p, arr.length).set(arr);
+    return p;
+  };
+  const levels = new Uint8Array(n), freq = new Uint32Array(n);
+  for (let i = 0; i < n; i++){ levels[i] = CH[NAMES[i]].l; freq[i] = CH[NAMES[i]].f || 0; }
+
+  const ra = [], rb = [], rr = [], rop = [];
+  for (const key in RX){
+    const parts = key.split("|");
+    if (!CIDX.has(parts[0]) || !CIDX.has(parts[1])) continue;
+    for (const e of RX[key]){
+      if (!CIDX.has(e[0])) continue;
+      ra.push(CIDX.get(parts[0])); rb.push(CIDX.get(parts[1]));
+      rr.push(CIDX.get(e[0])); rop.push(Math.max(0, OPS_ALL.indexOf(e[1])));
+    }
+  }
+  const da = new Int32Array(n).fill(-1), db = new Int32Array(n).fill(-1), dop = new Uint8Array(n);
+  for (const c in DC){
+    const d = DC[c];
+    if (!CIDX.has(c) || !CIDX.has(d[0]) || !CIDX.has(d[1])) continue;
+    const i = CIDX.get(c);
+    da[i] = CIDX.get(d[0]); db[i] = CIDX.get(d[1]); dop[i] = Math.max(0, OPS_ALL.indexOf(d[2]));
+  }
+  const av = new Int32Array(ATOMS.length), aw = new Float64Array(ATOMS.length);
+  for (let i = 0; i < ATOMS.length; i++){ av[i] = CIDX.get(ATOMS[i][0]); aw[i] = ATOMS[i][1]; }
+
+  X.init_tables(n, put(levels, Uint8Array), put(freq, Uint32Array),
+    ra.length, put(Int32Array.from(ra), Int32Array), put(Int32Array.from(rb), Int32Array),
+    put(Int32Array.from(rr), Int32Array), put(Uint8Array.from(rop), Uint8Array),
+    put(da, Int32Array), put(db, Int32Array), put(dop, Uint8Array),
+    av.length, put(av, Int32Array), put(aw, Float64Array));
+}
+
+function wasmPush(){
+  WX.set_params(P.starve, P.pressure, P.mobility, P.mutation, P.rain, P.recall,
+                P.birth, P.lonely, P.crowd, P.moore ? 1 : 0);
+}
+
+/* Copy the grid out of wasm memory into the cell objects the page renders.
+   Views are rebuilt each time because wasm memory can move when it grows. */
+function wasmPull(){
+  WX.sync();
+  const buf = WX.memory.buffer, n = W*H;
+  const vCh = new Int32Array(buf, WX.ptr_ch(), n);
+  const vLv = new Uint8Array(buf, WX.ptr_lv(), n);
+  const vT  = new Uint16Array(buf, WX.ptr_t(), n);
+  const vSy = new Uint8Array(buf, WX.ptr_syn(), n);
+  const vSa = new Int32Array(buf, WX.ptr_sa(), n);
+  const vSb = new Int32Array(buf, WX.ptr_sb(), n);
+  const vBo = new Int32Array(buf, WX.ptr_born(), n);
+  wStats = new Float64Array(buf, WX.ptr_stats(), 10);
+
+  for (let i = 0; i < n; i++){
+    const code = vCh[i];
+    if (code === -1){ cells[i] = null; continue; }
+    const synth = vSy[i] > 0;
+    const op = synth ? OPS_ALL[vSy[i] - 1] : null;
+    const a = vSa[i], b = vSb[i];
+    const name = synth ? op + NAMES[a] + NAMES[b] : NAMES[code];
+    let c = cells[i];
+    if (!c) c = cells[i] = { c:name, lv:0, t:0, cool:0, glow:0, born:0, from:null, synth:false };
+    else if (c.c !== name) c.glow = 1;
+    c.c = name; c.lv = vLv[i]; c.t = vT[i]; c.synth = synth; c.born = vBo[i];
+    c.from = (a >= 0 && b >= 0) ? [NAMES[a], NAMES[b], op || (DC[name] ? DC[name][2] : "")] : null;
+    if (S.tick - c.born < 1) c.glow = 1;
+  }
+  S.births = wStats[3]; S.deaths = wStats[4]; S.splits = wStats[5];
+}
+
+function wasmTick(){
+  wasmPush();
+  WX.tick();
+  S.tick++;
+  const ev = new Int32Array(WX.memory.buffer, WX.ptr_events(), WX.len_events());
+  for (let k = 0; k < ev.length; k += 5){
+    const synth = ev[k+4] !== 0, a = NAMES[ev[k+1]], b = NAMES[ev[k+2]], op = OPS_ALL[ev[k+3]];
+    const name = synth ? op + a + b : NAMES[ev[k]];
+    const lv = synth ? 1 + Math.max(lvOf(a), lvOf(b)) : lvOf(name);
+    record(name, synth, [a, b, op], lv);
+  }
+  wasmPull();
+  panelDirty = true;
+}
+
+function wasmReseed(){
+  WX.init_world(W, H, P.moore ? 1 : 0, P.density, (Math.random() * 4294967296) >>> 0);
+  wasmPush();
+  cells = new Array(W*H).fill(null);
+  wasmPull();
+}
+function wasmResize(cols, rows){
+  W = cols; H = rows; N = W*H;
+  WX.resize_world(cols, rows, P.density);
   cells = new Array(N).fill(null);
-  for (let i=0; i<N; i++) if (Math.random() < P.density) cells[i] = mk(randAtom(), 0);
+  wasmPull();
+}
+function wasmClear(){ WX.clear_dish(); wasmPull(); panelDirty = true; }
+function wasmSow(i){ WX.sow(i); wasmPull(); }
+
+const JS_ENGINE = { name:"JavaScript", wasm:false, tick:jsTick, seed:jsReseed,
+                    clear:jsClear, resize:jsResize, sow:jsSow };
+
+function startEngine(){
+  ENGINE = JS_ENGINE;
+  if (!WASM_B64 || WASM_B64.indexOf("__WASM") === 0) return;   /* not built in */
+  try {
+    const bin = Uint8Array.from(atob(WASM_B64), ch => ch.charCodeAt(0));
+    const inst = new WebAssembly.Instance(new WebAssembly.Module(bin), {});
+    WX = inst.exports;
+    marshal(WX);
+    ENGINE = { name:"WebAssembly", wasm:true, tick:wasmTick, seed:wasmReseed,
+               clear:wasmClear, resize:wasmResize, sow:wasmSow };
+  } catch (err){
+    /* a strict CSP, or no wasm at all: the JavaScript engine is complete */
+    WX = null;
+    ENGINE = JS_ENGINE;
+  }
+}
+
+/* one entry point each, whichever engine is live */
+function tick(){ ENGINE.tick(); }
+function clearDish(){ ENGINE.clear(); }
+function reseed(){
   S.tick = 0; S.bonds = 0; S.splits = 0; S.deaths = 0; S.births = 0;
   S.repeats = 0; S.real = 0; S.novel = 0;
   species = new Map(); log = []; recent = []; found = []; lastFormed = null;
   seenChars = new Set(); seenComp = new Set(); seenRx = new Set();
   treePlaceholder();
+  ENGINE.seed();
   logDirty = panelDirty = true;
 }
-function clearDish(){
+
+/* ---------- seeding ---------- */
+function jsReseed(){
+  cells = new Array(N).fill(null);
+  for (let i=0; i<N; i++) if (Math.random() < P.density) cells[i] = mk(randAtom(), 0);
+}
+function jsClear(){
   cells = new Array(N).fill(null);
   panelDirty = true;
 }
@@ -819,12 +965,9 @@ function setMode(m){
 }
 
 /* Growing the world keeps everything already alive and seeds only the new ground. */
-function setWorld(cols){
-  cols = Math.max(14, Math.min(180, Math.round(cols)));
-  const rows = Math.max(8, Math.round(cols * (chh && cw ? chh/cw : .62)));
-  if (cols === W && rows === H) return;
+function jsResize(cols, rows){
   const oW = W, oH = H, old = cells;
-  W = cols; H = rows; N = W*H; P.cols = W; P.rows = H;
+  W = cols; H = rows; N = W*H;
   const next = new Array(N).fill(null);
   for (let y=0; y<Math.min(H,oH); y++)
     for (let x=0; x<Math.min(W,oW); x++) next[y*W+x] = old[y*oW+x];
@@ -833,7 +976,17 @@ function setWorld(cols){
     next[y*W+x] = mk(randAtom(), 0);
   }
   cells = next;
-  buildNB(); layout(); syncView(); panelDirty = true;
+  buildNB();
+}
+function jsSow(i){ if (!cells[i]) cells[i] = mk(randAtom(), 0); }
+
+function setWorld(cols){
+  cols = Math.max(14, Math.min(180, Math.round(cols)));
+  const rows = Math.max(8, Math.round(cols * (chh && cw ? chh/cw : .62)));
+  if (cols === W && rows === H) return;
+  P.cols = cols; P.rows = rows;
+  ENGINE.resize(cols, rows);
+  layout(); syncView(); panelDirty = true;
 }
 const HANFONT = '"Songti SC","Source Han Serif SC","Noto Serif CJK SC","Noto Serif SC","Hiragino Mincho ProN","Yu Mincho","SimSun","MS Mincho",serif';
 
@@ -1083,9 +1236,11 @@ function paintPanel(){
     if (c.synth) synth++; else census[lvClamp(c.lv)]++;
     if (c.lv > 0) standing.set(c.c, (standing.get(c.c)||0) + 1);
   }
+  const cSeen = (ENGINE.wasm && wStats) ? wStats[6] : seenChars.size;
+  const cComp = (ENGINE.wasm && wStats) ? wStats[7] : seenComp.size;
   gauge("rx", seenRx.size, DATA.meta.reactions);
-  gauge("ch", seenChars.size, DATA.meta.characters, [S.real, seenComp.size]);
-  gauge("co", seenComp.size, DATA.meta.atoms);
+  gauge("ch", cSeen, DATA.meta.characters, [S.real, cComp]);
+  gauge("co", cComp, DATA.meta.atoms);
 
   $("v-tick").textContent = S.tick.toLocaleString();
   $("v-real").textContent = S.real.toLocaleString();
@@ -1117,7 +1272,7 @@ function paintPanel(){
       }).join("")
     : '<span class="empty-log">Nothing above component level is alive right now.</span>';
 
-  $("colophon-stats").innerHTML = "This run: " +
+  $("colophon-stats").innerHTML = ENGINE.name + " engine · this run: " +
     S.bonds.toLocaleString() + " bonds · " + S.births.toLocaleString() + " births · " +
     S.splits.toLocaleString() + " breaks · " + S.deaths.toLocaleString() + " deaths.";
 }
@@ -1420,7 +1575,7 @@ cv.addEventListener("pointermove", ev => {
     return;
   }
   hovered = cellAt(ev);
-  if (sowing && hovered >= 0 && !cells[hovered]) cells[hovered] = mk(randAtom(), 0);
+  if (sowing && hovered >= 0 && !cells[hovered]) ENGINE.sow(hovered);
   if (hovered >= 0 && cells[hovered]) showTree(cells[hovered].c);
   paintReadout();
 });
@@ -1435,7 +1590,7 @@ cv.addEventListener("pointerdown", ev => {
   if (mode === "map") return;
   sowing = true;
   const i = cellAt(ev);
-  if (i >= 0 && !cells[i]) cells[i] = mk(randAtom(), 0);
+  if (i >= 0 && !cells[i]) ENGINE.sow(i);
 });
 function endDrag(){ sowing = panning = false; cv.classList.remove("panning"); }
 cv.addEventListener("pointerup", endDrag);
@@ -1475,6 +1630,7 @@ function frame(now){
 /* ---------- boot ---------- */
 buildNB();
 buildControls();
+startEngine();
 reseed();
 resize();
 setWorld(P.cols);          /* square up the rows against the real dish aspect */

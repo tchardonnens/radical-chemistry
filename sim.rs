@@ -10,14 +10,20 @@
 // Reads data/world.tsv, produced by export_data.py. No external crates.
 
 use std::collections::HashMap;
+#[cfg(not(target_arch = "wasm32"))]
 use std::env;
+#[cfg(not(target_arch = "wasm32"))]
 use std::fs;
+#[cfg(not(target_arch = "wasm32"))]
 use std::process;
 
 const EMPTY: i32 = i32::MIN;
 const OPS: [&str; 12] = ["side by side", "one above the other", "three columns",
     "three rows", "one enclosing the other", "capped", "based", "framed on the left",
     "upper left", "upper right", "lower left", "overlaid"];
+// Indices into OPS that take exactly two components. A mis-bond joins a pair,
+// so it must never claim a three-part arrangement (⿲ and ⿳).
+const BINARY_OPS: [u8; 10] = [0, 1, 4, 5, 6, 7, 8, 9, 10, 11];
 
 // ---------------------------------------------------------------- rng
 struct Rng(u64);
@@ -37,7 +43,8 @@ impl Rng {
     }
     #[inline]
     fn below(&mut self, n: usize) -> usize {
-        ((self.next() >> 32) as usize * n) >> 32
+        // done in u64: usize is 32 bits on wasm32 and this would overflow
+        ((((self.next() >> 32) as u64) * n as u64) >> 32) as usize
     }
     #[inline]
     fn unit(&mut self) -> f64 {
@@ -117,6 +124,7 @@ struct Table {
     producible: usize,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn load(path: &str) -> Table {
     let text = fs::read_to_string(path).unwrap_or_else(|e| {
         eprintln!("cannot read {} ({}). Run: python3 export_data.py", path, e);
@@ -215,9 +223,9 @@ impl Default for P {
 }
 
 #[derive(Clone, Copy)]
-struct Cell { ch: i32, lv: u8, t: u16, cool: u8, born: u32, synth: bool, sa: i32, sb: i32 }
+struct Cell { ch: i32, lv: u8, t: u16, cool: u8, born: u32, synth: bool, sa: i32, sb: i32, op: u8 }
 
-const VOID: Cell = Cell { ch: EMPTY, lv: 0, t: 0, cool: 0, born: 0, synth: false, sa: -1, sb: -1 };
+const VOID: Cell = Cell { ch: EMPTY, lv: 0, t: 0, cool: 0, born: 0, synth: false, sa: -1, sb: -1, op: 0 };
 
 struct Sample { tick: u32, found: usize, seen: usize, comps: usize, pop: usize }
 
@@ -240,6 +248,7 @@ struct World<'a> {
     novel: HashMap<u64, u32>,
     tick: u32,
     bonds: u64, repeats: u64, births: u64, deaths: u64, splits: u64,
+    events: Vec<i32>,
     cum: Vec<f64>, total_w: f64,
     rng: Rng,
 }
@@ -287,6 +296,7 @@ impl<'a> World<'a> {
             novel: HashMap::new(),
             tick: 0,
             bonds: 0, repeats: 0, births: 0, deaths: 0, splits: 0,
+            events: Vec::new(),
             cum, total_w: acc,
             rng: Rng::new(seed),
         };
@@ -294,7 +304,7 @@ impl<'a> World<'a> {
             if world.rng.unit() < world.p.density {
                 let a = world.atom();
                 world.place(i, Cell { ch: a, lv: t.level[a as usize], t: 0, cool: 0,
-                                      born: 0, synth: false, sa: -1, sb: -1 });
+                                      born: 0, synth: false, sa: -1, sb: -1, op: 0 });
             }
         }
         world
@@ -334,6 +344,7 @@ impl<'a> World<'a> {
 
     fn record(&mut self, res: i32, synth: bool, a: i32, b: i32, op: u8) {
         self.bonds += 1;
+        self.events.extend_from_slice(&[res, a, b, op as i32, synth as i32]);
         if !synth {
             let k = res as usize;
             if self.count[k] == 0 {
@@ -355,6 +366,7 @@ impl<'a> World<'a> {
 
     fn step(&mut self) {
         self.tick += 1;
+        self.events.clear();
         for v in self.acted.iter_mut() { *v = false; }
 
         self.occ.clear();
@@ -402,7 +414,7 @@ impl<'a> World<'a> {
                     res = pick.0;
                     op = pick.1;
                 } else if misbond {
-                    op = (self.rng.below(12)) as u8;
+                    op = BINARY_OPS[self.rng.below(BINARY_OPS.len())];
                     synth = true;
                     let key = ((a as u64) << 40) | ((b as u64) << 8) | op as u64;
                     res = -((self.novel.len() as i32) + 1);
@@ -415,7 +427,7 @@ impl<'a> World<'a> {
                     self.t.level[res as usize]
                 };
                 let cell = Cell { ch: res, lv, t: 0, cool: 0, born: self.tick,
-                                  synth, sa: a, sb: b };
+                                  synth, sa: a, sb: b, op };
                 self.place(i, cell);
                 self.cells[j] = VOID;
                 self.acted[i] = true;
@@ -467,7 +479,7 @@ impl<'a> World<'a> {
                     let s = self.cells[pj];
                     born.push((i as u32, Cell { ch: s.ch, lv: s.lv, t: 0, cool: 0,
                                                 born: self.tick, synth: s.synth,
-                                                sa: s.sa, sb: s.sb }));
+                                                sa: s.sa, sb: s.sb, op: s.op }));
                 }
             }
         }
@@ -505,9 +517,9 @@ impl<'a> World<'a> {
                     let la = self.t.level[d.0 as usize];
                     let lb = self.t.level[d.1 as usize];
                     self.place(i, Cell { ch: d.0, lv: la, t: 0, cool: 3, born: self.tick,
-                                         synth: false, sa: -1, sb: -1 });
+                                         synth: false, sa: -1, sb: -1, op: 0 });
                     self.place(j, Cell { ch: d.1, lv: lb, t: 0, cool: 3, born: self.tick,
-                                         synth: false, sa: -1, sb: -1 });
+                                         synth: false, sa: -1, sb: -1, op: 0 });
                     self.splits += 1;
                 }
             }
@@ -543,7 +555,7 @@ impl<'a> World<'a> {
                     let a = self.atom();
                     let lv = self.t.level[a as usize];
                     self.place(i, Cell { ch: a, lv, t: 0, cool: 0, born: self.tick,
-                                         synth: false, sa: -1, sb: -1 });
+                                         synth: false, sa: -1, sb: -1, op: 0 });
                     break;
                 }
             }
@@ -558,12 +570,56 @@ impl<'a> World<'a> {
                         let ch = self.found[self.rng.below(self.found.len())];
                         let lv = self.t.level[ch as usize];
                         self.place(i, Cell { ch, lv, t: 0, cool: 0, born: self.tick,
-                                             synth: false, sa: -1, sb: -1 });
+                                             synth: false, sa: -1, sb: -1, op: 0 });
                         break;
                     }
                 }
             }
         }
+    }
+
+    /// Grow or shrink the world, keeping everything already alive in place and
+    /// seeding only the newly exposed ground.
+    fn resize(&mut self, cols: usize, rows: usize, density: f64) {
+        let (ow, oh) = (self.p.cols, self.p.rows);
+        if cols == ow && rows == oh { return; }
+        let old = std::mem::take(&mut self.cells);
+        let mut p = self.p.clone();
+        p.cols = cols; p.rows = rows;
+        let seed = self.rng.next();
+        let mut fresh = World::new(self.t, p, seed);
+        for y in 0..rows.min(oh) {
+            for x in 0..cols.min(ow) {
+                let c = old[y * ow + x];
+                fresh.cells[y * cols + x] = c;
+            }
+        }
+        for y in 0..rows {
+            for x in 0..cols {
+                if y < oh && x < ow { continue; }
+                let i = y * cols + x;
+                if fresh.rng.unit() < density {
+                    let a = fresh.atom();
+                    let lv = self.t.level[a as usize];
+                    fresh.place(i, Cell { ch: a, lv, t: 0, cool: 0, born: self.tick,
+                                          synth: false, sa: -1, sb: -1, op: 0 });
+                } else {
+                    fresh.cells[i] = VOID;
+                }
+            }
+        }
+        // carry the run's history across the resize
+        fresh.tick = self.tick;
+        fresh.bonds = self.bonds; fresh.repeats = self.repeats;
+        fresh.births = self.births; fresh.deaths = self.deaths; fresh.splits = self.splits;
+        fresh.count = std::mem::take(&mut self.count);
+        fresh.first = std::mem::take(&mut self.first);
+        fresh.src = std::mem::take(&mut self.src);
+        fresh.found = std::mem::take(&mut self.found);
+        fresh.seen = std::mem::take(&mut self.seen); fresh.seen_ct = self.seen_ct;
+        fresh.comp = std::mem::take(&mut self.comp); fresh.comp_ct = self.comp_ct;
+        fresh.novel = std::mem::take(&mut self.novel);
+        *self = fresh;
     }
 
     fn sample(&self) -> Sample {
@@ -578,6 +634,7 @@ impl<'a> World<'a> {
 }
 
 // ---------------------------------------------------------------- cli
+#[cfg(not(target_arch = "wasm32"))]
 fn parse() -> P {
     let mut p = P::default();
     let args: Vec<String> = env::args().skip(1).collect();
@@ -626,6 +683,7 @@ fn parse() -> P {
     p
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 const HELP: &str = "\
 Radical Chemistry - native simulator
 
@@ -638,6 +696,7 @@ Radical Chemistry - native simulator
   --marks 300,800,1500   report at these ticks
   --quiet                summary only        --tsv  machine-readable rows";
 
+#[cfg(not(target_arch = "wasm32"))]
 fn main() {
     let p = parse();
     let dir = env::current_exe().ok()
@@ -745,6 +804,207 @@ fn main() {
         }
         println!("\n  bonds {} - repeats {} - births {} - breaks {} - deaths {}",
                  totals.0, totals.1, totals.2, totals.4, totals.3);
-        let _ = OPS;
+    }
+}
+
+
+// ---------------------------------------------------------------- wasm
+// The browser drives the same World and the same step(); only the plumbing
+// differs. Tables come in from JavaScript, which already holds them, so the
+// page never ships a second copy of the data.
+#[cfg(target_arch = "wasm32")]
+mod web {
+    use super::*;
+
+    static mut TABLE: Option<&'static Table> = None;
+    static mut WORLD: Option<World<'static>> = None;
+    static mut OUT_CH: Vec<i32> = Vec::new();
+    static mut OUT_LV: Vec<u8> = Vec::new();
+    static mut OUT_T: Vec<u16> = Vec::new();
+    static mut OUT_SYN: Vec<u8> = Vec::new();
+    static mut OUT_SA: Vec<i32> = Vec::new();
+    static mut OUT_SB: Vec<i32> = Vec::new();
+    static mut OUT_BORN: Vec<i32> = Vec::new();
+    static mut STATS: [f64; 10] = [0.0; 10];
+
+    #[no_mangle]
+    pub extern "C" fn alloc(n: usize) -> *mut u8 {
+        let mut v: Vec<u8> = Vec::with_capacity(n);
+        let p = v.as_mut_ptr();
+        std::mem::forget(v);
+        p
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn init_tables(
+        nchars: usize, levels: *const u8, freq: *const u32,
+        nrec: usize, ra: *const i32, rb: *const i32, rr: *const i32, rop: *const u8,
+        da: *const i32, db: *const i32, dop: *const u8,
+        natoms: usize, atoms: *const i32, weights: *const f64,
+    ) {
+        let lv = std::slice::from_raw_parts(levels, nchars);
+        let fq = std::slice::from_raw_parts(freq, nchars);
+        let mut t = Table {
+            n: nchars,
+            name: Vec::new(), pinyin: Vec::new(), gloss: Vec::new(),
+            level: lv.to_vec(), freq: fq.to_vec(),
+            pairs: PairMap::new(1), span: Vec::new(), res: Vec::new(),
+            decomp: vec![(-1, -1, 0); nchars],
+            atoms: Vec::new(), weights: Vec::new(), producible: 0,
+        };
+        let (sa, sb, sr, so) = (
+            std::slice::from_raw_parts(ra, nrec),
+            std::slice::from_raw_parts(rb, nrec),
+            std::slice::from_raw_parts(rr, nrec),
+            std::slice::from_raw_parts(rop, nrec),
+        );
+        let mut grouped: HashMap<u64, Vec<(i32, u8)>> = HashMap::with_capacity(nrec);
+        for i in 0..nrec {
+            grouped.entry(pair_key(sa[i], sb[i])).or_default().push((sr[i], so[i]));
+        }
+        t.pairs = PairMap::new(grouped.len());
+        for (k, v) in grouped {
+            let start = t.res.len() as u32;
+            t.res.extend_from_slice(&v);
+            t.pairs.insert(k, t.span.len() as u32);
+            t.span.push((start, v.len() as u32));
+        }
+        let (xa, xb, xo) = (
+            std::slice::from_raw_parts(da, nchars),
+            std::slice::from_raw_parts(db, nchars),
+            std::slice::from_raw_parts(dop, nchars),
+        );
+        let mut producible = 0;
+        for i in 0..nchars {
+            if xa[i] >= 0 {
+                t.decomp[i] = (xa[i], xb[i], xo[i]);
+                producible += 1;
+            }
+        }
+        t.producible = producible;
+        t.atoms = std::slice::from_raw_parts(atoms, natoms).to_vec();
+        t.weights = std::slice::from_raw_parts(weights, natoms).to_vec();
+        TABLE = Some(Box::leak(Box::new(t)));
+    }
+
+    fn params(cols: usize, rows: usize, moore: bool, density: f64) -> P {
+        let mut p = P::default();
+        p.cols = cols; p.rows = rows; p.moore = moore; p.density = density;
+        p
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn init_world(cols: usize, rows: usize, moore: i32,
+                                        density: f64, seed: f64) {
+        let t = TABLE.expect("init_tables first");
+        WORLD = Some(World::new(t, params(cols, rows, moore != 0, density), seed as u64));
+        resize_out(cols * rows);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn resize_world(cols: usize, rows: usize, density: f64) {
+        if let Some(w) = WORLD.as_mut() {
+            w.resize(cols, rows, density);
+            resize_out(cols * rows);
+        }
+    }
+
+    unsafe fn resize_out(n: usize) {
+        OUT_CH.resize(n, -1); OUT_LV.resize(n, 0); OUT_T.resize(n, 0);
+        OUT_SYN.resize(n, 0); OUT_SA.resize(n, -1); OUT_SB.resize(n, -1);
+        OUT_BORN.resize(n, 0);
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn set_params(starve: f64, pressure: f64, mobility: f64,
+                                        mutation: f64, rain: f64, recall: f64,
+                                        birth: f64, lonely: f64, crowd: f64, moore: i32) {
+        if let Some(w) = WORLD.as_mut() {
+            w.p.starve = starve as u32;
+            w.p.pressure = pressure as i32;
+            w.p.mobility = mobility;
+            w.p.mutation = mutation;
+            w.p.rain = rain as u32;
+            w.p.recall = recall as u32;
+            w.p.birth = birth as i32;
+            w.p.lonely = lonely as i32;
+            w.p.crowd = crowd as i32;
+            if (moore != 0) != w.p.moore {
+                w.p.moore = moore != 0;
+                let (c, r) = (w.p.cols, w.p.rows);
+                let d = w.p.density;
+                // rebuilding the neighbourhood is a resize with the same shape
+                w.p.cols = 0;
+                w.resize(c, r, d);
+            }
+        }
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn tick() {
+        if let Some(w) = WORLD.as_mut() { w.step(); }
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn sow(i: usize) {
+        if let Some(w) = WORLD.as_mut() {
+            if i < w.n && w.cells[i].ch == EMPTY {
+                let a = w.atom();
+                let lv = w.t.level[a as usize];
+                let born = w.tick;
+                w.place(i, Cell { ch: a, lv, t: 0, cool: 0, born,
+                                  synth: false, sa: -1, sb: -1, op: 0 });
+            }
+        }
+    }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn clear_dish() {
+        if let Some(w) = WORLD.as_mut() { for c in w.cells.iter_mut() { *c = VOID; } }
+    }
+
+    /// Flatten the grid into parallel arrays the page can read without copying.
+    #[no_mangle]
+    pub unsafe extern "C" fn sync() {
+        let w = match WORLD.as_mut() { Some(w) => w, None => return };
+        for i in 0..w.n {
+            let c = w.cells[i];
+            if c.ch == EMPTY {
+                OUT_CH[i] = -1;
+            } else if c.synth {
+                OUT_CH[i] = -2;
+            } else {
+                OUT_CH[i] = c.ch;
+            }
+            OUT_LV[i] = c.lv;
+            OUT_T[i] = c.t;
+            OUT_SYN[i] = if c.synth { c.op + 1 } else { 0 };
+            OUT_SA[i] = c.sa;
+            OUT_SB[i] = c.sb;
+            OUT_BORN[i] = c.born as i32;
+        }
+        let mut pop = 0usize;
+        for i in 0..w.n { if w.cells[i].ch != EMPTY { pop += 1; } }
+        STATS = [w.tick as f64, w.bonds as f64, w.repeats as f64, w.births as f64,
+                 w.deaths as f64, w.splits as f64, w.seen_ct as f64, w.comp_ct as f64,
+                 w.found.len() as f64, pop as f64];
+    }
+
+    #[no_mangle] pub unsafe extern "C" fn ptr_ch() -> *const i32 { OUT_CH.as_ptr() }
+    #[no_mangle] pub unsafe extern "C" fn ptr_lv() -> *const u8 { OUT_LV.as_ptr() }
+    #[no_mangle] pub unsafe extern "C" fn ptr_t() -> *const u16 { OUT_T.as_ptr() }
+    #[no_mangle] pub unsafe extern "C" fn ptr_syn() -> *const u8 { OUT_SYN.as_ptr() }
+    #[no_mangle] pub unsafe extern "C" fn ptr_sa() -> *const i32 { OUT_SA.as_ptr() }
+    #[no_mangle] pub unsafe extern "C" fn ptr_sb() -> *const i32 { OUT_SB.as_ptr() }
+    #[no_mangle] pub unsafe extern "C" fn ptr_born() -> *const i32 { OUT_BORN.as_ptr() }
+    #[no_mangle] pub unsafe extern "C" fn ptr_stats() -> *const f64 { STATS.as_ptr() }
+
+    #[no_mangle]
+    pub unsafe extern "C" fn ptr_events() -> *const i32 {
+        WORLD.as_ref().map(|w| w.events.as_ptr()).unwrap_or(std::ptr::null())
+    }
+    #[no_mangle]
+    pub unsafe extern "C" fn len_events() -> usize {
+        WORLD.as_ref().map(|w| w.events.len()).unwrap_or(0)
     }
 }

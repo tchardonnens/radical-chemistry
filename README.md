@@ -14,10 +14,18 @@ meaning. Nothing about which parts combine into which character is hand-written.
 
     open radical-chemistry.html          # the interactive dish, one self-contained file
 
-The terminal simulator is Rust, with no crates to fetch:
+`sim.rs` is the engine, and it has two front-ends. No crates, no wasm-bindgen:
 
+    # native, for terminal experiments
     python3 export_data.py                       # data/hanzi.json -> data/world.tsv
     rustc -C opt-level=3 -C target-cpu=native sim.rs -o sim
+
+    # the same rules, compiled for the browser (54 KB)
+    rustup target add wasm32-unknown-unknown
+    rustc --target wasm32-unknown-unknown --crate-type=cdylib -C opt-level=3 \
+          -C panic=abort -C lto=fat -C codegen-units=1 -C strip=symbols \
+          sim.rs -o sim.wasm
+    python3 build.py                             # inlines the wasm as base64
 
     ./sim --ticks 6000 --cols 180 --rows 113 --recall 32
     ./sim --ticks 800 --reps 8 --threads 8 --quiet
@@ -42,6 +50,19 @@ the coverage experiments below possible.
 Levels are derived, not assigned: level 0 is a component nothing in the table
 can build, and anything else is one deeper than its deepest parent. Runs reach
 level 5–6 — e.g. `丰 + 阝 → 邦`, then `纟 + 邦 → 绑`.
+
+## Two engines
+
+The page runs `sim.wasm` - the same `World` and the same `step()` the terminal
+uses - and falls back to a complete JavaScript implementation of the rules if
+the module will not instantiate, which a strict Content-Security-Policy can
+prevent. The colophon at the bottom of the controls says which one is live.
+
+WebAssembly runs about **2.5x faster** (300 ticks in 48 ms against 121 ms), but
+the reason to have it is that the rules then exist once rather than twice. The
+`.wasm` is inlined as base64 rather than fetched, so the page still works opened
+straight off disk, and JavaScript keeps all rendering: it reads the grid out of
+wasm memory and never copies the dictionary in.
 
 ## Two views
 
