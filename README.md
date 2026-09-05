@@ -2,6 +2,8 @@
 
 **Live: https://hanzi.thomascdnns.com**
 
+![The dish evolving](radical-chemistry.gif)
+
 A Game of Life whose reaction table is the Chinese writing system. Components
 drift across a grid, bond into real characters when the script says they
 combine that way, are born and die by Conway's neighbour counts, break apart
