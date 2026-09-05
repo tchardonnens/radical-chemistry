@@ -288,6 +288,46 @@
     .vitals{margin-left:0; width:100%; justify-content:space-between}
     .tree{max-height:430px}
   }
+
+  /* On a touch screen the dish must not swallow the page scroll, or the
+     controls below it become unreachable. Vertical panning and pinch stay
+     with the browser; a sideways drag still sows. */
+  @media (pointer:coarse){
+    #grid{touch-action:pan-y pinch-zoom}
+  }
+
+  @media (max-width:640px){
+    .masthead{padding:11px 14px; gap:11px 16px}
+    .brand{gap:10px}
+    .brand h1{font-size:17px}
+    .tagline{font-size:11.5px}
+    .seal{font-size:14px; padding:4px 5px 5px}
+    .vitals{gap:14px}
+    .vital b{font-size:20px}
+
+    .gauge{flex:1 1 100%; padding:6px 14px 7px; border-right:0;
+           border-bottom:1px solid var(--line-soft)}
+    .gauge:last-child{border-bottom:0}
+
+    .dish{height:56vh; min-height:270px}
+    .modes button{padding:6px 10px; font-size:11px}
+    .modes{top:8px; right:8px}
+    .hint{left:8px; bottom:8px; font-size:9px; letter-spacing:.07em; padding:3px 7px}
+
+    .specimen{padding:12px 14px}
+    .tree{padding:12px 14px 18px; max-height:none}
+
+    .panel section{padding:14px}
+    .head{margin-bottom:11px}
+    .log{margin:0 -14px; padding:0 14px; max-height:none}
+    .colophon{padding:12px 14px 22px}
+    .tally div{padding:7px}
+    .tally b{font-size:14px}
+    .legend{grid-template-columns:1fr 1fr; gap:4px 10px}
+    button{padding:8px 12px}
+    .presets button{padding:9px 10px}
+    input[type=range]{height:22px}
+  }
   @media (prefers-reduced-motion:reduce){
     *{transition:none !important}
   }
@@ -353,7 +393,7 @@
         <button id="m-map">Semantic map</button>
       </div>
       <canvas id="grid"></canvas>
-      <div class="hint" id="hint">Drag to sow · scroll to zoom · shift-drag to pan</div>
+      <div class="hint" id="hint"></div>
     </div>
 
   </div>
@@ -965,9 +1005,7 @@ function setMode(m){
   mode = m; view = views[m]; hoverChar = null; hovered = -1;
   $("m-dish").classList.toggle("on", m === "dish");
   $("m-map").classList.toggle("on", m === "map");
-  $("hint").textContent = m === "dish"
-    ? "Drag to sow · scroll to zoom · shift-drag to pan"
-    : "Every character placed by meaning · scroll to zoom in and read them";
+  $("hint").textContent = hintFor(m);
   layout(); syncView(); paintReadout();
 }
 
@@ -1160,7 +1198,19 @@ function buildTree(ch, path, rootFrom){
   return { c:ch, op:d[2], kids:kids, h:1 + Math.max(kids[0].h, kids[1].h) };
 }
 
-const TREE = { col:23, row:14, pad:4, r:6 };
+/* Sized from the column's actual width, with a legible floor: widen the
+   inspector and the tree grows with it. */
+function treeMetrics(depth){
+  const avail = Math.max(150, ($("tree").clientWidth || 170) - 8);
+  /* Column width is set by how deep the tree is; glyph size is set by how much
+     room each node has. They are not the same thing, so a deep tree gets tight
+     columns rather than tiny characters. */
+  const col = Math.max(24, Math.min(64, Math.floor((avail - 20) / (depth + 0.55))));
+  const row = Math.max(20, Math.min(34, Math.round(col * 0.82)));
+  const glyph = Math.max(14, Math.min(23, Math.round(Math.min(col * 0.66, row * 0.74))));
+  return { col: col, row: row, pad: 6, r: Math.round(glyph * 0.62),
+           leaf: glyph, node: Math.min(26, glyph + 2) };
+}
 let treeFor = null;
 
 function treeHead(meta){
@@ -1196,25 +1246,26 @@ function showTree(ch){
     flat.push(n);
   })(root);
 
-  const X = n => TREE.pad + n.h * TREE.col;
-  const Y = n => TREE.pad + n.row * TREE.row + TREE.row/2;
-  const w = TREE.pad*2 + root.h * TREE.col + 14;
-  const h = TREE.pad*2 + rows * TREE.row;
+  const M = treeMetrics(root.h);
+  const X = n => M.pad + n.h * M.col;
+  const Y = n => M.pad + n.row * M.row + M.row/2;
+  const w = M.pad*2 + root.h * M.col + Math.round(M.node * 0.8);
+  const h = M.pad*2 + rows * M.row;
 
   let paths = "", glyphs = "";
   for (const n of flat){
     if (n.kids){
-      const jx = X(n) - TREE.col*.45;
+      const jx = X(n) - M.col*.45;
       for (const k of n.kids){
-        paths += '<path d="M' + (X(k)+TREE.r) + ',' + Y(k) + ' H' + jx + ' V' + Y(n) + '"/>';
+        paths += '<path d="M' + (X(k)+M.r) + ',' + Y(k) + ' H' + jx + ' V' + Y(n) + '"/>';
       }
-      paths += '<path d="M' + jx + ',' + Y(n) + ' H' + (X(n)-TREE.r) + '"/>';
+      paths += '<path d="M' + jx + ',' + Y(n) + ' H' + (X(n)-M.r) + '"/>';
     }
     const e = CH[n.c];
     const lv = n.kids ? lvClamp(lvOf(n.c)) : 0;
     const leaf = !n.kids;
     glyphs += '<text x="' + X(n) + '" y="' + Y(n) + '" text-anchor="middle"'
-      + ' dominant-baseline="central" font-size="' + (leaf ? 11 : 12) + '"'
+      + ' dominant-baseline="central" font-size="' + (leaf ? M.leaf : M.node) + '"'
       + ' class="lv' + lv + '"' + (leaf ? '' : ' font-weight="500"')
       + ' fill="currentColor">'
       + '<title>' + esc(cardTitle(n.c)) + '</title>' + esc(disp(n.c)) + '</text>';
@@ -1528,6 +1579,7 @@ function setCol(v, px){
   root.style.setProperty(v, n + "px");
   try { localStorage.setItem("rc" + v, n); } catch (err) { /* private window */ }
   resize(); syncView();
+  if (v === "--insp" && treeFor){ const t = treeFor; treeFor = null; showTree(t); }
 }
 for (const v in COLS){
   try {
@@ -1566,6 +1618,13 @@ function cellAt(ev){
   const x = Math.floor((ev.clientX - r.left - ox)/cs), y = Math.floor((ev.clientY - r.top - oy)/cs);
   return (x >= 0 && y >= 0 && x < W && y < H) ? y*W + x : -1;
 }
+const TOUCH = typeof matchMedia === "function" && matchMedia("(pointer:coarse)").matches;
+const hintFor = m => m === "map"
+  ? (TOUCH ? "Tap a dot to read it · pinch to zoom"
+           : "Every character placed by meaning · scroll to zoom in and read them")
+  : (TOUCH ? "Tap to inspect · drag sideways to sow"
+           : "Drag to sow · scroll to zoom · shift-drag to pan");
+
 let sowing = false, panning = false, panX = 0, panY = 0;
 cv.addEventListener("pointermove", ev => {
   if (mode === "map" && !panning){
@@ -1594,10 +1653,21 @@ cv.addEventListener("pointerdown", ev => {
     ev.preventDefault();
     return;
   }
-  if (mode === "map") return;
+  const r = cv.getBoundingClientRect();
+  if (mode === "map"){
+    hoverChar = nearestChar(ev.clientX - r.left, ev.clientY - r.top);
+    if (hoverChar) showTree(hoverChar);
+    paintReadout();
+    return;
+  }
   sowing = true;
   const i = cellAt(ev);
-  if (i >= 0 && !cells[i]) ENGINE.sow(i);
+  if (i >= 0){
+    if (!cells[i]) ENGINE.sow(i);
+    hovered = i;                        /* a tap inspects, as a hover would */
+    if (cells[i]) showTree(cells[i].c);
+    paintReadout();
+  }
 });
 function endDrag(){ sowing = panning = false; cv.classList.remove("panning"); }
 cv.addEventListener("pointerup", endDrag);
@@ -1643,6 +1713,7 @@ resize();
 setWorld(P.cols);          /* square up the rows against the real dish aspect */
 new ResizeObserver(() => { resize(); syncView(); }).observe(cv.parentElement);
 syncControls(); syncView();
+$("hint").textContent = hintFor(mode);
 treePlaceholder();
 paintLog(); paintRecent(); paintPanel(); paintReadout();
 for (let i=0; i<14; i++) tick();   /* open on a dish that is already reacting */
