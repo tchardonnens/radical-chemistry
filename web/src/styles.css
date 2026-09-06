@@ -170,6 +170,19 @@
   .decay .bar{height:4px; background:var(--line-soft); border-radius:2px; overflow:hidden}
   .decay .bar i{display:block; height:100%; background:var(--alarm); width:0}
 
+  /* ---------- the rules, shown while nothing is hovered ---------- */
+  .specimen:empty{display:none}
+  .rules{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px}
+  .rules li{display:grid; grid-template-columns:auto minmax(0,1fr); gap:9px; align-items:start}
+  .rules .rn{font-size:10px; color:var(--ink-3); padding-top:3px; font-variant-numeric:tabular-nums}
+  .rules .rb{display:flex; flex-direction:column; gap:3px; min-width:0}
+  .rules .rt{font-size:12px; font-weight:500; letter-spacing:.01em}
+  .rules .rt i{font-style:normal; color:var(--alarm); margin-left:3px}
+  .rules .rd{font-size:11px; color:var(--ink-3); line-height:1.5}
+  .ramp{margin:15px 0 0; padding-top:12px; border-top:1px solid var(--line-soft)}
+  .ink-ramp{display:inline-block; margin:0 5px; white-space:nowrap}
+  .ramp b{font-weight:400; font-size:13px; padding:0 1px}
+
   /* ---------- genealogy ---------- */
   .tree{flex:1; min-height:0; overflow:auto; padding:12px 13px 16px}
   .tree .top{display:flex; align-items:baseline; gap:7px; margin-bottom:8px; flex-wrap:wrap}

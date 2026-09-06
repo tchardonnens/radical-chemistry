@@ -161,22 +161,9 @@ function Discoveries() {
 /* ------------------------------------------------------------- inspector */
 function Readout() {
   const r = readout.value;
-  if (!r || r.empty)
-    return (
-      <>
-        <div class="ident">
-          <div class="glyph han">字</div>
-          <div class="who">
-            <span class="pinyin mono">—</span>
-            <div class="tags" />
-          </div>
-        </div>
-        <div class="gloss">
-          {(r && r.hint) || "Hover any cell in the dish to read its specimen card."}
-        </div>
-        <div class="eq han" />
-      </>
-    );
+  /* Nothing hovered: render nothing at all, and .specimen:empty collapses the
+     block so the rules below get the whole column. */
+  if (!r || r.empty) return null;
   return (
     <>
       <div class="ident">
@@ -212,9 +199,63 @@ function Readout() {
   );
 }
 
+/* ------------------------------------------------------------------ rules */
+const RULES = [
+  ["Synthesis", "合", <>Two touching pieces fuse when the writing system says they
+    combine. The table holds every one of them, and nothing else happens.</>],
+  ["Starvation", "餓", <>A piece that cannot bond pales the way ink dries and
+    disappears. Its patience is multiplied by its level, so compounds outlast
+    components.</>],
+  ["Life", "生", <>An empty square with the birth number of neighbours comes
+    alive, inheriting a component from one of them. Too few neighbours, or too
+    many, and a piece dies.</>],
+  ["Crowding", "壓", <>A character hemmed in by neighbours breaks back into the
+    two parts it is written from, and both halves recoil before they can bond
+    again.</>],
+  ["Drift", "動", <>Pieces wander into empty squares at a rate divided by their
+    level. Heavy compounds barely move.</>],
+  ["Rain", "雨", <>Fresh components fall each tick, drawn by how productive they
+    are in the real script. Character rain, off by default, returns what the run
+    has already found.</>],
+];
+
+function Rules() {
+  return (
+    <>
+      <div class="top">
+        <h3>Rules</h3>
+        <span class="cn han">規則</span>
+        <span class="meta">one tick, in order</span>
+      </div>
+      <ol class="rules">
+        {RULES.map(([name, cn, text], i) => (
+          <li key={name}>
+            <span class="rn mono">{i + 1}</span>
+            <span class="rb">
+              <span class="rt">{name} <i class="han">{cn}</i></span>
+              <span class="rd">{text}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+      <p class="say ramp">
+        Level is drawn as ink density
+        <span class="ink-ramp">
+          {[0, 1, 2, 3, 4, 5].map(l => (
+            <b key={l} class={"han lv" + l}>{l === 5 ? "朱" : "墨"}</b>
+          ))}
+        </span>
+        running from a loose component to a character six generations deep, with
+        cinnabar for the deepest.
+      </p>
+    </>
+  );
+}
+
 /* ------------------------------------------------------------- genealogy */
 function Tree() {
   const t = tree.value;
+  if (!t) return <Rules />;
   const head = meta => (
     <div class="top">
       <h3>Genealogy</h3>
@@ -222,10 +263,6 @@ function Tree() {
       {meta && <span class="meta">{meta}</span>}
     </div>
   );
-  if (!t) return <>{head("")}<p class="say">
-    Hover a character — in the dish, on the map, or anywhere in the log — to see
-    how the writing system builds it. The tree grows one generation per level.
-  </p></>;
   if (t.bare) return <>{head("irreducible")}<p class="say">
     <b class="lv0" style="font-size:15px">{t.shown}</b> is a component. Nothing in
     the writing system builds it — it has to be seeded.

@@ -109,6 +109,7 @@ export function boot() {
   let species = new Map();
   let log = [];
   let hovered = -1, lastFormed = null, logDirty = true, panelDirty = true;
+  let pinnedChar = null;   /* a character hovered in the panel, not the canvas */
 
   const cv = document.getElementById("grid"), ctx = cv.getContext("2d", { alpha:false });
   let cs = 20, ox = 0, oy = 0, cw = 0, chh = 0, fitCS = 20, unit = 20;
@@ -914,12 +915,13 @@ export function boot() {
     let sp = null, ch = null, onMap = false;
     if (c) ch = c.c;
     else if (mode === "map" && hoverChar){ ch = hoverChar; sp = species.get(ch) || null; onMap = true; }
-    else { sp = lastFormed; ch = sp ? sp.c : null; }
+    else if (pinnedChar){ ch = pinnedChar; sp = species.get(ch) || null; onMap = true; }
 
+    /* Nothing under the pointer: hand the column back to the rules. */
     if (!ch){
-      STORE.readout.value = { empty: true, hint: mode === "map"
-        ? "Every dot is a character, placed by what it means. Hover one to read it."
-        : "Hover any cell in the dish to read its specimen card." };
+      STORE.readout.value = null;
+      STORE.tree.value = null;
+      treeFor = null;
       return;
     }
 
@@ -1051,7 +1053,17 @@ export function boot() {
   });
   document.querySelector(".panel").addEventListener("mouseover", ev => {
     const el = ev.target.closest("[data-c]");
-    if (el) showTree(el.dataset.c);
+    if (el){
+      pinnedChar = el.dataset.c;
+      showTree(pinnedChar);
+      paintReadout();
+    } else if (pinnedChar){
+      pinnedChar = null;
+      paintReadout();
+    }
+  });
+  document.querySelector(".panel").addEventListener("mouseleave", () => {
+    if (pinnedChar){ pinnedChar = null; paintReadout(); }
   });
   document.querySelectorAll("[data-filter]").forEach(b => b.addEventListener("click", () => {
     STORE.logFilter.value = b.dataset.filter;
