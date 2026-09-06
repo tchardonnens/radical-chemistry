@@ -18,6 +18,11 @@ description sequences, weighted by
 A character's *level* is the depth of its decomposition tree, so `林` is one
 generation up from `木`, and runs reach level 6.
 
+Level is drawn as **ink density** the way a brush painting grades a wash, from
+a pale component to near-black, with cinnabar kept for the deepest characters
+and for the marks a reader makes. Light is xuan paper; dark is a stone rubbing,
+pale strokes on an inked ground.
+
 The **semantic map** places all 9,142 characters by meaning — tf-idf over their
 English glosses, SVD, then t-SNE. It recovers the semantic radical families on
 its own: the regions it names include water, meat, tree, bird, silk and horse.

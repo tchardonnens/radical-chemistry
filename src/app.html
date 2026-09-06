@@ -3,41 +3,48 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
+  /* Ink on paper. Level is drawn as ink density (濃淡) the way a brush painting
+     grades a wash, and cinnabar is kept for what a seal means: the deepest
+     characters, and the marks a reader makes on the page. Light is xuan paper;
+     dark is a stone rubbing, pale strokes on an inked ground. */
   :root{
-    --ground:#eaeef3; --dish:#f6f8fa; --panel:#f1f4f7; --raise:#ffffff;
-    --line:#d3dbe4; --line-soft:#e2e8ef;
-    --ink:#141c26; --ink-2:#41505f; --ink-3:#6d7d8e;
-    --lv0:#7b8898; --lv1:#1f8a72; --lv2:#2a72b8; --lv3:#6f52c0;
-    --lv4:#b07908; --lv5:#3d4a58;
-    --alarm:#c8442f; --synth:#b2318b;
-    --dot:rgba(20,28,38,.09);
-    --focus:#2a72b8;
-    --shadow:0 1px 2px rgba(20,28,38,.06), 0 8px 24px rgba(20,28,38,.05);
+    --ground:#dbd0b5; --dish:#f0ead9; --panel:#e6dec7; --raise:#f5f1e4;
+    --line:#c6ba9c; --line-soft:#d8cfb5;
+    --ink:#1a1612; --ink-2:#4e4638; --ink-3:#857b67;
+    --lv0:#938974; --lv1:#776d58; --lv2:#585040; --lv3:#3a3428;
+    --lv4:#1f1b15; --lv5:#ad3327;
+    --alarm:#ad3327; --synth:#bc586e;
+    --dot:rgba(26,22,18,.16);
+    --fibre-a:#8a7c5c; --fibre-b:#fffdf4;
+    --focus:#ad3327;
+    --shadow:0 1px 2px rgba(60,48,30,.10), 0 10px 26px rgba(60,48,30,.10);
     --insp:196px; --aside:376px;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
-      --ground:#080b11; --dish:#0b0f17; --panel:#0e131c; --raise:#141b26;
-      --line:#1d2735; --line-soft:#161e2a;
-      --ink:#dde4ee; --ink-2:#93a1b3; --ink-3:#6a7788;
-      --lv0:#6c7c90; --lv1:#43c2a5; --lv2:#57a5e6; --lv3:#a48ce8;
-      --lv4:#e3a93f; --lv5:#f2f1ea;
-      --alarm:#e2503c; --synth:#e260ae;
-      --dot:rgba(200,215,235,.07);
-      --focus:#57a5e6;
-      --shadow:0 1px 0 rgba(255,255,255,.02), 0 12px 32px rgba(0,0,0,.45);
+      --ground:#14100c; --dish:#1c1712; --panel:#191510; --raise:#251f19;
+      --line:#3d3227; --line-soft:#29221b;
+      --ink:#e9e1ce; --ink-2:#ada18b; --ink-3:#7a7060;
+      --lv0:#857a66; --lv1:#a1957d; --lv2:#bdb094; --lv3:#d5c8a9;
+      --lv4:#f0e6cd; --lv5:#e05244;
+      --alarm:#e05244; --synth:#d06a86;
+      --dot:rgba(233,225,206,.10);
+      --fibre-a:#000000; --fibre-b:#8a7c66;
+      --focus:#cf483c;
+      --shadow:0 1px 0 rgba(255,255,255,.02), 0 12px 32px rgba(0,0,0,.5);
     }
   }
   :root[data-theme="dark"]{
-    --ground:#080b11; --dish:#0b0f17; --panel:#0e131c; --raise:#141b26;
-    --line:#1d2735; --line-soft:#161e2a;
-    --ink:#dde4ee; --ink-2:#93a1b3; --ink-3:#6a7788;
-    --lv0:#6c7c90; --lv1:#43c2a5; --lv2:#57a5e6; --lv3:#a48ce8;
-    --lv4:#e3a93f; --lv5:#f2f1ea;
-    --alarm:#e2503c; --synth:#e260ae;
-    --dot:rgba(200,215,235,.07);
-    --focus:#57a5e6;
-    --shadow:0 1px 0 rgba(255,255,255,.02), 0 12px 32px rgba(0,0,0,.45);
+    --ground:#14100c; --dish:#1c1712; --panel:#191510; --raise:#251f19;
+    --line:#3d3227; --line-soft:#29221b;
+    --ink:#e9e1ce; --ink-2:#ada18b; --ink-3:#7a7060;
+    --lv0:#857a66; --lv1:#a1957d; --lv2:#bdb094; --lv3:#d5c8a9;
+    --lv4:#f0e6cd; --lv5:#e05244;
+    --alarm:#e05244; --synth:#d06a86;
+    --dot:rgba(233,225,206,.10);
+    --fibre-a:#000000; --fibre-b:#8a7c66;
+    --focus:#e05244;
+    --shadow:0 1px 0 rgba(255,255,255,.02), 0 12px 32px rgba(0,0,0,.5);
   }
 
   *{box-sizing:border-box}
@@ -85,8 +92,8 @@
     margin:0 0 3px; font-size:19px; font-weight:600; letter-spacing:-.02em; line-height:1;
   }
   .seal{
-    flex:none; font-size:16px; line-height:1; color:var(--alarm);
-    border:1.5px solid var(--alarm); border-radius:3px; padding:5px 6px 6px;
+    flex:none; font-size:16px; line-height:1; color:var(--dish);
+    background:var(--alarm); border-radius:2px; padding:5px 6px 6px;
   }
   .tagline{font-size:12px; color:var(--ink-3); line-height:1.3; margin:0}
   .vitals{margin-left:auto; display:flex; gap:30px}
@@ -108,10 +115,10 @@
   .gauge .bar{height:2px; background:var(--line-soft); border-radius:1px; overflow:hidden;
               display:flex}
   .gauge .bar i{height:100%; transition:width .25s linear}
-  .gauge .k b{font-weight:400; color:var(--lv2)}
-  .gauge .k em{font-style:normal; color:var(--lv0)}
-  #gb-rx{background:var(--lv1)} #gb-ch{background:var(--lv2)}
-  #gb-ch2{background:var(--lv0)} #gb-co{background:var(--lv0)}
+  .gauge .k b{font-weight:400; color:var(--alarm)}
+  .gauge .k em{font-style:normal; color:var(--lv2)}
+  #gb-rx{background:var(--alarm)} #gb-ch{background:var(--alarm)}
+  #gb-ch2{background:var(--lv2)} #gb-co{background:var(--lv2)}
 
   .dish{position:relative; flex:1; min-height:0; background:var(--dish); overflow:hidden}
   #grid{display:block; width:100%; height:100%; cursor:crosshair; touch-action:none}
@@ -570,6 +577,7 @@ let hovered = -1, lastFormed = null, logDirty = true, panelDirty = true;
 
 const cv = document.getElementById("grid"), ctx = cv.getContext("2d", { alpha:false });
 let cs = 20, ox = 0, oy = 0, cw = 0, chh = 0, fitCS = 20, unit = 20;
+let paper = null, paperKey = "";
 let mode = "dish", hoverChar = null;
 const views = { dish:{ zoom:1, px:0, py:0 }, map:{ zoom:1, px:0, py:0 } };
 let view = views.dish;
@@ -584,8 +592,10 @@ function readColors(){
   COL = {
     lv:[get("--lv0"),get("--lv1"),get("--lv2"),get("--lv3"),get("--lv4"),get("--lv5")].map(hex2rgb),
     synth:hex2rgb(get("--synth")), alarm:hex2rgb(get("--alarm")),
-    dish:get("--dish"), dot:get("--dot")
+    dish:get("--dish"), dot:get("--dot"),
+    fibreA:get("--fibre-a"), fibreB:get("--fibre-b")
   };
+  paper = null;   /* the sheet is tinted by the theme, so redraw it */
 }
 function hex2rgb(h){
   h = h.replace("#","");
@@ -1028,6 +1038,37 @@ function setWorld(cols){
 }
 const HANFONT = '"Songti SC","Source Han Serif SC","Noto Serif CJK SC","Noto Serif SC","Hiragino Mincho ProN","Yu Mincho","SimSun","MS Mincho",serif';
 
+/* A sheet of paper, drawn once per size and theme: loose fibres and a few soft
+   blooms where the sizing takes ink differently. Reused every frame. */
+function makePaper(){
+  const key = cw + "x" + chh + "|" + COL.dish;
+  if (paper && paperKey === key) return;
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, cw); c.height = Math.max(1, chh);
+  const g = c.getContext("2d");
+  g.fillStyle = COL.dish;
+  g.fillRect(0, 0, c.width, c.height);
+  g.lineWidth = 1;
+  const fibres = Math.min(9000, Math.round(cw * chh / 700));
+  for (let i = 0; i < fibres; i++){
+    const x = Math.random()*cw, y = Math.random()*chh;
+    const len = 5 + Math.random()*26, a = Math.random()*Math.PI;
+    g.strokeStyle = Math.random() < .5 ? COL.fibreA : COL.fibreB;
+    g.globalAlpha = .022 + Math.random()*.04;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a)*len, y + Math.sin(a)*len); g.stroke();
+  }
+  for (let i = 0; i < 12; i++){
+    const x = Math.random()*cw, y = Math.random()*chh, r = 70 + Math.random()*170;
+    const grd = g.createRadialGradient(x, y, 0, x, y, r);
+    grd.addColorStop(0, COL.fibreA);
+    grd.addColorStop(1, "rgba(0,0,0,0)");
+    g.globalAlpha = .05; g.fillStyle = grd;
+    g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill();
+  }
+  g.globalAlpha = 1;
+  paper = c; paperKey = key;
+}
+
 function draw(dt){
   /* fade every flash, on screen or not, so nothing pops when panned into view */
   const decay = Math.pow(.86, dt*60);
@@ -1035,8 +1076,9 @@ function draw(dt){
     const c = cells[i];
     if (c && c.glow > .02) c.glow *= decay; else if (c) c.glow = 0;
   }
-  ctx.fillStyle = COL.dish;
-  ctx.fillRect(0,0,cw,chh);
+  makePaper();
+  if (paper) ctx.drawImage(paper, 0, 0);
+  else { ctx.fillStyle = COL.dish; ctx.fillRect(0,0,cw,chh); }
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   if (mode === "dish") drawDish(); else drawMap();
 }
@@ -1061,9 +1103,9 @@ function drawDish(){
     const x = ox + gx*cs + cs/2, y = oy + gy*cs + cs/2;
     const pat = patienceOf(c);
     const wear = pat === Infinity ? 0 : Math.min(1, c.t/pat);
-    let col = c.synth ? COL.synth : COL.lv[lvClamp(c.lv)];
-    if (wear > .7) col = mix(col, COL.alarm, (wear-.7)/.3);
-    const alpha = 1 - .62*wear;
+    const col = c.synth ? COL.synth : COL.lv[lvClamp(c.lv)];
+    /* a starving piece pales the way ink dries, rather than changing colour */
+    const alpha = 1 - .6*wear;
     const glyphs = disp(c.c).length;
     const size = glyphs > 1 ? cs*.30 : cs*(.60 + Math.min(c.lv,5)*.035);
     ctx.font = (c.lv >= 4 ? "600 " : "400 ") + size.toFixed(1) + "px " + HANFONT;
