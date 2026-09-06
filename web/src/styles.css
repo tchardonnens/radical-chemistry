@@ -1,0 +1,331 @@
+/* Ink on paper, with the mineral pigments of 青綠 landscape painting. The
+     ramp runs through the pigments a painter actually kept on the slab: pale
+     ink, malachite (石綠), azurite (石青), ochre (赭石), full ink. Each level
+     gets its own hue as well as its own weight, so no two read alike. Cinnabar
+     (朱砂) is kept
+     for what a seal means: the deepest characters, and the marks a reader makes
+     on the page. Light is xuan paper; dark is a stone rubbing. */
+  :root{
+    --ground:#dbd0b5; --dish:#f0ead9; --panel:#e6dec7; --raise:#f5f1e4;
+    --line:#c6ba9c; --line-soft:#d8cfb5;
+    --ink:#1a1612; --ink-2:#4e4638; --ink-3:#857b67;
+    --lv0:#a89d85; --lv1:#5f8f45; --lv2:#1e4d78; --lv3:#b08a2e;
+    --lv4:#171310; --lv5:#b22a1c;
+    --alarm:#ad3327; --synth:#bc586e;
+    --dot:rgba(26,22,18,.16);
+    --fibre-a:#8a7c5c; --fibre-b:#fffdf4;
+    --focus:#ad3327;
+    --shadow:0 1px 2px rgba(60,48,30,.10), 0 10px 26px rgba(60,48,30,.10);
+    --insp:196px; --aside:376px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#14100c; --dish:#1c1712; --panel:#191510; --raise:#251f19;
+      --line:#3d3227; --line-soft:#29221b;
+      --ink:#e9e1ce; --ink-2:#ada18b; --ink-3:#7a7060;
+      --lv0:#6f6656; --lv1:#6fb85f; --lv2:#5b9fd6; --lv3:#dcae4a;
+      --lv4:#f4ecd6; --lv5:#e8564a;
+      --alarm:#e05244; --synth:#d06a86;
+      --dot:rgba(233,225,206,.10);
+      --fibre-a:#000000; --fibre-b:#8a7c66;
+      --focus:#cf483c;
+      --shadow:0 1px 0 rgba(255,255,255,.02), 0 12px 32px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#14100c; --dish:#1c1712; --panel:#191510; --raise:#251f19;
+    --line:#3d3227; --line-soft:#29221b;
+    --ink:#e9e1ce; --ink-2:#ada18b; --ink-3:#7a7060;
+    --lv0:#6f6656; --lv1:#6fb85f; --lv2:#5b9fd6; --lv3:#dcae4a;
+    --lv4:#f4ecd6; --lv5:#e8564a;
+    --alarm:#e05244; --synth:#d06a86;
+    --dot:rgba(233,225,206,.10);
+    --fibre-a:#000000; --fibre-b:#8a7c66;
+    --focus:#e05244;
+    --shadow:0 1px 0 rgba(255,255,255,.02), 0 12px 32px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .han{font-family:"Songti SC","Source Han Serif SC","Noto Serif CJK SC","Noto Serif SC",
+       "Hiragino Mincho ProN","Yu Mincho","SimSun","MS Mincho",serif}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  .app{display:grid; grid-template-columns:var(--insp) minmax(0,1fr) var(--aside);
+       height:100dvh; min-height:560px; position:relative}
+
+  /* draggable column dividers */
+  .grip{
+    position:absolute; top:0; bottom:0; width:11px; margin-left:-5px; z-index:6;
+    cursor:col-resize; background:none; border:0; padding:0; touch-action:none;
+  }
+  .grip::after{
+    content:""; position:absolute; inset:0 5px; background:transparent;
+    transition:background .12s;
+  }
+  .grip:hover::after, .grip.on::after{background:var(--focus)}
+  .grip:focus-visible{outline:0}
+  .grip:focus-visible::after{background:var(--focus)}
+  #grip-l{left:var(--insp)}
+  #grip-r{left:calc(100% - var(--aside))}
+
+  /* ---------- left column: what you are looking at ---------- */
+  .inspector{
+    background:var(--panel); border-right:1px solid var(--line);
+    display:flex; flex-direction:column; min-width:0; min-height:0;
+  }
+
+  /* ---------- stage ---------- */
+  .stage{display:flex; flex-direction:column; min-width:0; border-right:1px solid var(--line)}
+  .masthead{
+    display:flex; align-items:center; gap:24px 32px; flex-wrap:wrap;
+    padding:13px 22px; border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex; align-items:center; gap:12px; min-width:0}
+  .brand h1{
+    margin:0 0 3px; font-size:19px; font-weight:600; letter-spacing:-.02em; line-height:1;
+  }
+  .seal{
+    flex:none; font-size:16px; line-height:1; color:var(--dish);
+    background:var(--alarm); border-radius:2px; padding:5px 6px 6px;
+  }
+  .tagline{font-size:12px; color:var(--ink-3); line-height:1.3; margin:0}
+  .vitals{margin-left:auto; display:flex; gap:30px}
+  .vital{display:flex; flex-direction:column-reverse; gap:3px; text-align:right}
+  .vital b{font-size:23px; font-weight:400; letter-spacing:-.02em;
+           font-variant-numeric:tabular-nums; line-height:1}
+  .vital span{font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+
+  .subhead{display:flex; flex-wrap:wrap; border-bottom:1px solid var(--line); background:var(--panel)}
+  .gauge{
+    flex:1 1 170px; min-width:0; padding:8px 22px 9px; display:flex; flex-direction:column; gap:6px;
+    border-right:1px solid var(--line-soft);
+  }
+  .gauge:last-child{border-right:0}
+  .gauge .row{display:flex; align-items:baseline; justify-content:space-between; gap:12px}
+  .gauge .k{font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+  .gauge .v{font-size:12.5px; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .gauge .v small{font-size:11px; color:var(--ink-3)}
+  .gauge .bar{height:2px; background:var(--line-soft); border-radius:1px; overflow:hidden;
+              display:flex}
+  .gauge .bar i{height:100%; transition:width .25s linear}
+  .gauge .k b{font-weight:400; color:var(--alarm)}
+  .gauge .k em{font-style:normal; color:var(--lv0)}
+  #gb-rx{background:var(--alarm)} #gb-ch{background:var(--alarm)}
+  #gb-ch2{background:var(--lv0)} #gb-co{background:var(--lv0)}
+
+  .dish{position:relative; flex:1; min-height:0; background:var(--dish); overflow:hidden}
+  #grid{display:block; width:100%; height:100%; cursor:crosshair; touch-action:none}
+  #grid.panning{cursor:grabbing}
+  #grid.pannable{cursor:grab}
+  .modes{
+    position:absolute; top:12px; right:12px; display:flex; gap:1px; z-index:2;
+    background:var(--line); border:1px solid var(--line); border-radius:2px; overflow:hidden;
+  }
+  .modes button{
+    border:0; border-radius:0; background:var(--panel); color:var(--ink-3);
+    font-size:11.5px; padding:6px 13px;
+  }
+  .modes button.on{background:var(--raise); color:var(--ink)}
+
+  .hint{
+    position:absolute; left:12px; bottom:10px; pointer-events:none;
+    font-size:10px; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3);
+    background:var(--dish); border:1px solid var(--line-soft); border-radius:2px;
+    padding:4px 8px;
+  }
+
+  /* ---------- specimen card ---------- */
+  .specimen{
+    display:flex; flex-direction:column; gap:9px;
+    padding:12px 13px 13px; border-bottom:1px solid var(--line);
+  }
+  .ident{display:flex; align-items:center; gap:10px}
+  .glyph{
+    flex:none; width:46px; height:46px; display:flex; align-items:center; justify-content:center;
+    font-size:34px; line-height:1; color:var(--ink-3);
+    border:1px solid var(--line); border-radius:2px; background:var(--dish);
+  }
+  .glyph.small{font-size:17px}
+  .who{display:flex; flex-direction:column; gap:5px; min-width:0}
+  .pinyin{font-size:14px; font-weight:500; overflow-wrap:anywhere}
+  .gloss{font-size:11.5px; color:var(--ink-2); line-height:1.45}
+  .eq{display:flex; align-items:center; gap:5px; font-size:15px; line-height:1.25; flex-wrap:wrap}
+  .eq .op{font-size:10.5px; color:var(--ink-3); letter-spacing:.06em; text-transform:uppercase}
+  .eq .arrow{color:var(--ink-3); font-size:12px}
+  .tags{display:flex; gap:5px; flex-wrap:wrap}
+  .tag{
+    font-size:9px; letter-spacing:.09em; text-transform:uppercase;
+    padding:2px 5px; border:1px solid var(--line); border-radius:2px; color:var(--ink-3);
+    white-space:nowrap;
+  }
+  .tag.on{border-color:currentColor}
+  .decay{display:flex; flex-direction:column; gap:5px}
+  .decay .dl{display:flex; justify-content:space-between; gap:10px}
+  .decay small{font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3)}
+  .decay .bar{height:4px; background:var(--line-soft); border-radius:2px; overflow:hidden}
+  .decay .bar i{display:block; height:100%; background:var(--alarm); width:0}
+
+  /* ---------- genealogy ---------- */
+  .tree{flex:1; min-height:0; overflow:auto; padding:12px 13px 16px}
+  .tree .top{display:flex; align-items:baseline; gap:7px; margin-bottom:8px; flex-wrap:wrap}
+  .tree h3{margin:0; font-size:9.5px; letter-spacing:.15em; text-transform:uppercase; font-weight:600}
+  .tree .cn{font-size:11px; color:var(--ink-3)}
+  .tree .meta{font-size:10px; color:var(--ink-3); font-variant-numeric:tabular-nums;
+              letter-spacing:.06em; text-transform:uppercase}
+  .tree .say{font-size:11px; color:var(--ink-3); line-height:1.5}
+  .tree svg{display:block}
+  .tree svg text{font-family:"Songti SC","Source Han Serif SC","Noto Serif CJK SC",
+                 "Noto Serif SC","Hiragino Mincho ProN","SimSun",serif}
+  .tree svg path{fill:none; stroke:var(--line); stroke-width:1}
+
+  /* ---------- panel ---------- */
+  .panel{background:var(--panel); overflow-y:auto; display:flex; flex-direction:column}
+  .panel section{padding:16px 20px; border-bottom:1px solid var(--line)}
+  .panel section:last-of-type{border-bottom:0}
+  .head{display:flex; align-items:baseline; gap:9px; margin-bottom:13px}
+  .head h2{margin:0; font-size:10.5px; letter-spacing:.15em; text-transform:uppercase; font-weight:600}
+  .head .cn{font-size:12px; color:var(--ink-3)}
+  .head .aside{margin-left:auto; font-size:10.5px; color:var(--ink-3); font-variant-numeric:tabular-nums}
+
+  .row{display:flex; gap:7px; flex-wrap:wrap}
+  button{
+    font:inherit; font-size:12.5px; color:var(--ink); background:var(--raise);
+    border:1px solid var(--line); border-radius:2px; padding:7px 12px; cursor:pointer;
+    transition:border-color .12s, color .12s, background .12s;
+  }
+  button:hover{border-color:var(--ink-3)}
+  button:focus-visible{outline:2px solid var(--focus); outline-offset:1px}
+  button.primary{min-width:88px; font-weight:500}
+  button.on{border-color:var(--focus); color:var(--focus)}
+  button.ghost{background:transparent; color:var(--ink-3); padding:5px 9px; font-size:11px}
+  button.ghost.on{color:var(--ink); border-color:var(--ink-3)}
+
+  .viewctl{display:grid; grid-template-columns:1fr 1fr; gap:0 14px; margin-top:14px;
+           padding-top:13px; border-top:1px solid var(--line-soft)}
+  .viewctl .ctrl{margin-bottom:6px}
+  .viewctl .full{grid-column:1/-1; display:flex; gap:9px; align-items:center}
+  .viewctl .full button{white-space:nowrap; flex:none}
+  .viewctl .full .scale{font-size:10.5px; color:var(--ink-3); font-variant-numeric:tabular-nums;
+                        line-height:1.35; min-width:0}
+
+  .presets{display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:9px}
+  .presets button{display:flex; align-items:baseline; gap:7px; text-align:left; padding:8px 10px}
+  .presets .cn{font-size:13px; color:var(--ink-3)}
+
+  .ctrl{display:grid; grid-template-columns:1fr auto; gap:3px 10px; align-items:center; margin-bottom:13px}
+  .ctrl:last-child{margin-bottom:0}
+  .ctrl label{font-size:12px; color:var(--ink-2)}
+  .ctrl output{font-size:12px; font-variant-numeric:tabular-nums; color:var(--ink)}
+  .ctrl .note{grid-column:1/-1; font-size:10.5px; color:var(--ink-3); line-height:1.35; margin-top:1px}
+  input[type=range]{grid-column:1/-1; width:100%; margin:3px 0 0; accent-color:var(--focus); height:16px}
+  input[type=range]:focus-visible{outline:2px solid var(--focus); outline-offset:3px}
+
+  .census{display:flex; height:9px; border-radius:2px; overflow:hidden; background:var(--line-soft); margin-bottom:11px}
+  .census i{display:block; transition:width .2s linear}
+  .legend{display:grid; grid-template-columns:1fr 1fr; gap:4px 14px}
+  .leg{display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--ink-2)}
+  .leg .sw{width:8px; height:8px; border-radius:1px; flex:none}
+  .leg .n{margin-left:auto; font-variant-numeric:tabular-nums; color:var(--ink-3)}
+
+  .log{display:flex; flex-direction:column; gap:0; max-height:420px; overflow-y:auto; margin:0 -20px; padding:0 20px}
+  .entry{display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:2px 11px; padding:8px 0; border-bottom:1px solid var(--line-soft)}
+  .entry:last-child{border-bottom:0}
+  .entry .t{font-size:10.5px; color:var(--ink-3); font-variant-numeric:tabular-nums; padding-top:4px}
+  .entry .body{display:flex; flex-direction:column; gap:3px; min-width:0}
+  .entry .f{display:flex; align-items:baseline; gap:7px; font-size:16px; line-height:1.2; flex-wrap:wrap}
+  .entry .f .sep{font-size:11px; color:var(--ink-3)}
+  .entry .g{font-size:11px; color:var(--ink-3); line-height:1.35; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .entry .g b{font-weight:500; color:var(--ink-2)}
+  .entry .n{font-size:10px; color:var(--ink-3); font-variant-numeric:tabular-nums;
+            border:1px solid var(--line); border-radius:2px; padding:2px 4px; align-self:center}
+  .empty-log{font-size:11.5px; color:var(--ink-3); padding:6px 0 2px; line-height:1.5}
+
+  .ticker{display:flex; flex-wrap:wrap; gap:4px; min-height:34px; align-content:flex-start}
+  .ticker .t{
+    display:flex; align-items:baseline; gap:4px; padding:4px 6px; border-radius:2px;
+    font-size:16px; line-height:1; border:1px solid transparent; background:var(--raise);
+  }
+  .ticker .t.fresh{border-color:currentColor}
+  .ticker .t small{font-size:9.5px; color:var(--ink-3); font-variant-numeric:tabular-nums}
+  .ticker .idle{font-size:11.5px; color:var(--ink-3)}
+
+  .tally{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1px; margin-bottom:13px;
+    background:var(--line); border:1px solid var(--line); border-radius:2px; overflow:hidden;
+  }
+  .tally div{background:var(--panel); padding:8px 9px; display:flex; flex-direction:column; gap:3px}
+  .tally b{font-size:16px; font-weight:500; font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+  .tally span{font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3)}
+
+  .species{display:flex; flex-wrap:wrap; gap:5px}
+  .species .s{
+    display:flex; align-items:baseline; gap:5px; border:1px solid var(--line);
+    border-radius:2px; padding:4px 7px; font-size:15px; background:var(--raise);
+  }
+  .species .s small{font-size:10px; color:var(--ink-3); font-variant-numeric:tabular-nums}
+
+  .colophon{padding:14px 20px 22px; font-size:10.5px; line-height:1.6; color:var(--ink-3)}
+  .colophon a{color:var(--ink-2)}
+
+  .lv0{color:var(--lv0)} .lv1{color:var(--lv1)} .lv2{color:var(--lv2)}
+  .lv3{color:var(--lv3)} .lv4{color:var(--lv4)} .lv5{color:var(--lv5)}
+  .syn{color:var(--synth)}
+
+  @media (max-width:1180px){
+    .app{grid-template-columns:1fr; height:auto; min-height:0}
+    .grip{display:none}
+    .stage{order:1; border-right:0; border-bottom:1px solid var(--line)}
+    .inspector{order:2; border-right:0; border-bottom:1px solid var(--line)}
+    .panel{order:3}
+    .dish{height:60vh; min-height:340px}
+    .vitals{margin-left:0; width:100%; justify-content:space-between}
+    .tree{max-height:430px}
+  }
+
+  /* On a touch screen the dish must not swallow the page scroll, or the
+     controls below it become unreachable. Vertical panning and pinch stay
+     with the browser; a sideways drag still sows. */
+  @media (pointer:coarse){
+    #grid{touch-action:pan-y pinch-zoom}
+  }
+
+  @media (max-width:640px){
+    .masthead{padding:11px 14px; gap:11px 16px}
+    .brand{gap:10px}
+    .brand h1{font-size:17px}
+    .tagline{font-size:11.5px}
+    .seal{font-size:14px; padding:4px 5px 5px}
+    .vitals{gap:14px}
+    .vital b{font-size:20px}
+
+    .gauge{flex:1 1 100%; padding:6px 14px 7px; border-right:0;
+           border-bottom:1px solid var(--line-soft)}
+    .gauge:last-child{border-bottom:0}
+
+    .dish{height:56vh; min-height:270px}
+    .modes button{padding:6px 10px; font-size:11px}
+    .modes{top:8px; right:8px}
+    .hint{left:8px; bottom:8px; font-size:9px; letter-spacing:.07em; padding:3px 7px}
+
+    .specimen{padding:12px 14px}
+    .tree{padding:12px 14px 18px; max-height:none}
+
+    .panel section{padding:14px}
+    .head{margin-bottom:11px}
+    .log{margin:0 -14px; padding:0 14px; max-height:none}
+    .colophon{padding:12px 14px 22px}
+    .tally div{padding:7px}
+    .tally b{font-size:14px}
+    .legend{grid-template-columns:1fr 1fr; gap:4px 10px}
+    button{padding:8px 12px}
+    .presets button{padding:9px 10px}
+    input[type=range]{height:22px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important}
+  }

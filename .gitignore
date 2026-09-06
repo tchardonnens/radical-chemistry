@@ -8,3 +8,5 @@ dist/
 sim
 __pycache__/
 *.pyc
+node_modules/
+dist-web/

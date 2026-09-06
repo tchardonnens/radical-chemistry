@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Radical Chemistry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="inspector">
+        <div class="specimen" id="specimen"></div>
+        <div class="tree" id="tree"></div>
+      </aside>
+    
+      <div class="grip" id="grip-l" role="separator" aria-orientation="vertical"
+           tabindex="0" aria-label="Resize the inspector column"
+           title="Drag to resize · double-click to reset"></div>
+    
+      <div class="stage">
+        <div class="masthead">
+          <div class="brand">
+            <span class="seal han">字</span>
+            <div>
+              <h1>Radical Chemistry</h1>
+              <p class="tagline">A Game of Life whose reaction table is the Chinese writing system.</p>
+            </div>
+          </div>
+          <div class="vitals" id="vitals"></div>
+        </div>
+    
+        <div class="subhead" id="subhead"></div>
+    
+        <div class="dish">
+          <div class="modes">
+            <button id="m-dish" class="on">Dish</button>
+            <button id="m-map">Semantic map</button>
+          </div>
+          <canvas id="grid"></canvas>
+          <div class="hint" id="hint"></div>
+        </div>
+    
+      </div>
+    
+      <div class="grip" id="grip-r" role="separator" aria-orientation="vertical"
+           tabindex="0" aria-label="Resize the controls column"
+           title="Drag to resize · double-click to reset"></div>
+    
+      <aside class="panel">
+        <section>
+          <div class="head"><h2>Run</h2><span class="cn han">運行</span><span class="aside" id="rate"></span></div>
+          <div class="row">
+            <button class="primary" id="b-play">Pause</button>
+            <button id="b-step">Step</button>
+            <button id="b-reset">Reseed</button>
+            <button id="b-clear">Empty</button>
+          </div>
+          <div class="presets" id="presets"></div>
+          <div class="viewctl">
+            <div class="ctrl">
+              <label for="c-world">World</label><output id="o-world"></output>
+              <input type="range" id="c-world" min="14" max="180" step="2">
+            </div>
+            <div class="ctrl">
+              <label for="c-zoom">Zoom</label><output id="o-zoom"></output>
+              <input type="range" id="c-zoom" min="0.4" max="6" step="0.05">
+            </div>
+            <div class="full">
+              <button class="ghost" id="b-fit">Fit to view</button>
+              <span class="scale mono" id="o-scale"></span>
+            </div>
+          </div>
+        </section>
+        <section>
+          <div class="head"><h2>Census</h2><span class="cn han">譜系</span><span class="aside" id="census-n"></span></div>
+          <div id="census-block"></div>
+        </section>
+        <section>
+          <div class="head"><h2>Coming out of the soup</h2><span class="cn han">近況</span>
+            <span class="aside" id="recent-n"></span></div>
+          <div class="ticker" id="recent"></div>
+        </section>
+        <section>
+          <div class="head">
+            <h2>Discoveries</h2><span class="cn han">發現</span>
+            <span class="aside row" style="gap:4px">
+              <button class="ghost on" data-filter="all">All</button>
+              <button class="ghost" data-filter="real">Real</button>
+              <button class="ghost" data-filter="novel">Novel</button>
+            </span>
+          </div>
+          <div class="tally" id="tally"></div>
+          <div class="log" id="log"></div>
+          <div class="row" style="margin-top:11px">
+            <button class="ghost" id="b-copy">Copy discovery list</button>
+          </div>
+        </section>
+        <section>
+          <div class="head"><h2>Standing population</h2><span class="cn han">現存</span></div>
+          <div class="species" id="species"></div>
+        </section>
+        <section>
+          <div class="head"><h2>Conditions</h2><span class="cn han">參數</span></div>
+          <div id="controls"></div>
+        </section>
+    
+        <div class="colophon" id="colophon-text"></div>
+      </aside>
+    </div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

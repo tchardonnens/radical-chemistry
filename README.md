@@ -34,9 +34,10 @@ its own: the regions it names include water, meat, tree, bird, silk and horse.
     ./fetch_data.sh                      # the two dictionaries
     python3 build_data.py                # -> data/hanzi.json (the reaction table)
     python3 build_semantics.py           # -> adds map coordinates (numpy, sklearn)
-    python3 export_data.py               # -> data/world.tsv for the simulator
+    python3 export_data.py               # -> data/world.tsv for the native simulator
     rustc -C opt-level=3 sim.rs -o sim   # native engine
-    python3 build.py                     # -> radical-chemistry.html
+    npm install && npm run wasm          # engine for the browser
+    npm run build                        # -> radical-chemistry.html + dist/artifact.html
 
 `sim.rs` is the engine and has two front-ends. The page runs it as WebAssembly
 (`--target wasm32-unknown-unknown --crate-type=cdylib`, 54 KB, inlined as
@@ -70,8 +71,19 @@ and the population settles near 74% fill, which is loose enough to keep mixing:
 Character rain is what makes it possible; without it deep characters die faster
 than they can be rebuilt and the curve is flat by tick 1500.
 
-## Files
+## Layout
 
     build_data.py  build_semantics.py  export_data.py   derive the data
     sim.rs         the engine, native and wasm          sweep.py  experiments
-    src/app.html   the page              build.py       inlines data + wasm
+
+    web/index.html         the shell: mount points, nothing else
+    web/src/styles.css     tokens and layout
+    web/src/store.js       what the panel draws, as signals
+    web/src/ui/Panel.jsx   the panel, as Preact components
+    web/src/sim.js         simulation, canvas renderers, input
+    scripts/package.js     Vite output -> standalone page + artifact fragment
+
+Vite bundles it to one self-contained file, inlining the reaction table and the
+wasm, because the page has to work opened off disk and inside a sandbox that
+blocks external requests. Preact renders the panel; the canvas loop and the
+engine stay imperative, since a virtual DOM buys them nothing.

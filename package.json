@@ -1,0 +1,19 @@
+{
+  "name": "radical-chemistry",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/package.js",
+    "wasm": "rustc --target wasm32-unknown-unknown --crate-type=cdylib -C opt-level=3 -C panic=abort -C lto=fat -C codegen-units=1 -C strip=symbols sim.rs -o sim.wasm"
+  },
+  "dependencies": {
+    "@preact/signals": "^2.11.2",
+    "preact": "^10.29.8"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "vite": "^8.2.2",
+    "vite-plugin-singlefile": "^2.3.3"
+  }
+}
