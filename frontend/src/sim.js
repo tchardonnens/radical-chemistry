@@ -1221,5 +1221,16 @@ export function boot() {
   paintLog(); paintRecent(); paintPanel(); paintReadout();
   for (let i=0; i<14; i++) tick();   /* open on a dish that is already reacting */
   paintLog(); paintRecent(); paintPanel(); paintReadout();
+  /* A handle for tooling: the screenshot and parity scripts drive a fixed
+     number of ticks and repaint, rather than racing the animation loop. */
+  window.__rc = {
+    run(n){
+      S.running = false;
+      for (let i = 0; i < n; i++) tick();
+      paintPanel(); paintLog(); paintRecent(); paintReadout();
+    },
+    stats: () => ({ tick: S.tick, found: S.real, bonds: S.bonds, engine: ENGINE.name }),
+  };
+
   requestAnimationFrame(frame);
 }

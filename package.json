@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/package.js",
-    "wasm": "rustc --target wasm32-unknown-unknown --crate-type=cdylib -C opt-level=3 -C panic=abort -C lto=fat -C codegen-units=1 -C strip=symbols sim.rs -o sim.wasm"
+    "native": "rustc -C opt-level=3 -C target-cpu=native backend/sim.rs -o backend/sim",
+    "wasm": "rustc --target wasm32-unknown-unknown --crate-type=cdylib -C opt-level=3 -C panic=abort -C lto=fat -C codegen-units=1 -C strip=symbols backend/sim.rs -o backend/sim.wasm"
   },
   "dependencies": {
     "@preact/signals": "^2.11.2",

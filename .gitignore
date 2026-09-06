@@ -5,7 +5,7 @@ data/cedict.txt
 data/world.tsv
 # build outputs
 dist/
-sim
+backend/sim
 __pycache__/
 *.pyc
 node_modules/

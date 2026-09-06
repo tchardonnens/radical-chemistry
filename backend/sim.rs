@@ -4,7 +4,7 @@
 // system says they do, are born and die by Conway's neighbour counts, break
 // apart under crowding, starve when they cannot make meaning.
 //
-//   rustc -C opt-level=3 -C target-cpu=native sim.rs -o sim
+//   rustc -C opt-level=3 -C target-cpu=native backend/sim.rs -o backend/sim
 //   ./sim --ticks 6000 --cols 180 --rows 113 --recall 32
 //
 // Reads data/world.tsv, produced by export_data.py. No external crates.
@@ -702,8 +702,11 @@ fn main() {
     let dir = env::current_exe().ok()
         .and_then(|e| e.parent().map(|d| d.to_path_buf()))
         .unwrap_or_default();
-    let mut path = dir.join("data/world.tsv");
-    if !path.exists() { path = std::path::PathBuf::from("data/world.tsv"); }
+    let mut path = dir.join("../data/world.tsv");
+    for cand in ["data/world.tsv", "../data/world.tsv"] {
+        if path.exists() { break; }
+        path = std::path::PathBuf::from(cand);
+    }
     let table = load(path.to_str().unwrap());
 
     let reps = p.reps.max(1);

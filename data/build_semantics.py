@@ -28,7 +28,7 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.manifold import TSNE
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DATA = os.path.join(HERE, "data")
+DATA = HERE
 
 STOP = set("""a an the of to in on at by for with from and or but not is are was were be been
 being as it its this that these those he she they them his her their you your we our i me my

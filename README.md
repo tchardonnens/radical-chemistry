@@ -31,21 +31,23 @@ its own: the regions it names include water, meat, tree, bird, silk and horse.
 
     open radical-chemistry.html          # self-contained, no server needed
 
-    ./fetch_data.sh                      # the two dictionaries
-    python3 build_data.py                # -> data/hanzi.json (the reaction table)
-    python3 build_semantics.py           # -> adds map coordinates (numpy, sklearn)
-    python3 export_data.py               # -> data/world.tsv for the native simulator
-    rustc -C opt-level=3 sim.rs -o sim   # native engine
-    npm install && npm run wasm          # engine for the browser
+    data/fetch_data.sh                   # the two dictionaries
+    python3 data/build_data.py           # -> data/hanzi.json (the reaction table)
+    python3 data/build_semantics.py      # -> adds map coordinates (numpy, sklearn)
+    python3 data/export_data.py          # -> data/world.tsv for the native engine
+
+    npm install
+    npm run wasm                         # backend/sim.rs -> backend/sim.wasm
+    npm run native                       # backend/sim.rs -> backend/sim
     npm run build                        # -> radical-chemistry.html + dist/artifact.html
 
-`sim.rs` is the engine and has two front-ends. The page runs it as WebAssembly
-(`--target wasm32-unknown-unknown --crate-type=cdylib`, 54 KB, inlined as
-base64) and falls back to an equivalent JavaScript implementation where wasm
-will not instantiate. The colophon says which is live.
+`backend/sim.rs` is the engine and has two front-ends. The page runs it as
+WebAssembly (54 KB, inlined as base64) and falls back to an equivalent
+JavaScript implementation where wasm will not instantiate. The colophon says
+which is live.
 
-    ./sim --ticks 6000 --cols 180 --rows 113 --recall 32
-    python3 sweep.py --ticks 600         # parameter sweeps
+    ./backend/sim --ticks 6000 --cols 180 --rows 113 --recall 32
+    python3 backend/sweep.py --ticks 600
 
 ## What the parameters do
 
@@ -73,17 +75,26 @@ than they can be rebuilt and the curve is flat by tick 1500.
 
 ## Layout
 
-    build_data.py  build_semantics.py  export_data.py   derive the data
-    sim.rs         the engine, native and wasm          sweep.py  experiments
+    frontend/          the page
+      index.html         the shell: mount points, nothing else
+      src/styles.css     tokens and layout
+      src/store.js       what the panel draws, as signals
+      src/ui/Panel.jsx   the panel, as Preact components
+      src/sim.js         simulation, canvas renderers, input
 
-    web/index.html         the shell: mount points, nothing else
-    web/src/styles.css     tokens and layout
-    web/src/store.js       what the panel draws, as signals
-    web/src/ui/Panel.jsx   the panel, as Preact components
-    web/src/sim.js         simulation, canvas renderers, input
-    scripts/package.js     Vite output -> standalone page + artifact fragment
+    backend/           the engine
+      sim.rs             one implementation, native and wasm front-ends
+      sweep.py           parameter sweeps, driving the native binary
 
-Vite bundles it to one self-contained file, inlining the reaction table and the
-wasm, because the page has to work opened off disk and inside a sandbox that
-blocks external requests. Preact renders the panel; the canvas loop and the
-engine stay imperative, since a virtual DOM buys them nothing.
+    data/              the pipeline and what it derives
+      fetch_data.sh      the two open dictionaries
+      build_data.py      -> hanzi.json, the reaction table
+      build_semantics.py -> semantic map coordinates
+      export_data.py     -> world.tsv, for the native engine
+
+    scripts/package.js   Vite output -> standalone page + artifact fragment
+
+Vite bundles the frontend to one self-contained file, inlining the reaction
+table and the wasm, because the page has to work opened off disk and inside a
+sandbox that blocks external requests. Preact renders the panel; the canvas
+loop and the engine stay imperative, since a virtual DOM buys them nothing.

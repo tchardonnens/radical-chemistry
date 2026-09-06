@@ -9,8 +9,8 @@
     --ground:#dbd0b5; --dish:#f0ead9; --panel:#e6dec7; --raise:#f5f1e4;
     --line:#c6ba9c; --line-soft:#d8cfb5;
     --ink:#1a1612; --ink-2:#4e4638; --ink-3:#857b67;
-    --lv0:#a89d85; --lv1:#5f8f45; --lv2:#1e4d78; --lv3:#b08a2e;
-    --lv4:#171310; --lv5:#b22a1c;
+    --lv0:#6b6353; --lv1:#2f6b3c; --lv2:#17456e; --lv3:#7d5f0a;
+    --lv4:#14100c; --lv5:#a82418;
     --alarm:#ad3327; --synth:#bc586e;
     --dot:rgba(26,22,18,.16);
     --fibre-a:#8a7c5c; --fibre-b:#fffdf4;
@@ -23,8 +23,8 @@
       --ground:#14100c; --dish:#1c1712; --panel:#191510; --raise:#251f19;
       --line:#3d3227; --line-soft:#29221b;
       --ink:#e9e1ce; --ink-2:#ada18b; --ink-3:#7a7060;
-      --lv0:#6f6656; --lv1:#6fb85f; --lv2:#5b9fd6; --lv3:#dcae4a;
-      --lv4:#f4ecd6; --lv5:#e8564a;
+      --lv0:#b3a68c; --lv1:#6fc95a; --lv2:#74b3e6; --lv3:#e8bb5c;
+      --lv4:#f7f0dc; --lv5:#f0655a;
       --alarm:#e05244; --synth:#d06a86;
       --dot:rgba(233,225,206,.10);
       --fibre-a:#000000; --fibre-b:#8a7c66;
@@ -36,8 +36,8 @@
     --ground:#14100c; --dish:#1c1712; --panel:#191510; --raise:#251f19;
     --line:#3d3227; --line-soft:#29221b;
     --ink:#e9e1ce; --ink-2:#ada18b; --ink-3:#7a7060;
-    --lv0:#6f6656; --lv1:#6fb85f; --lv2:#5b9fd6; --lv3:#dcae4a;
-    --lv4:#f4ecd6; --lv5:#e8564a;
+    --lv0:#b3a68c; --lv1:#6fc95a; --lv2:#74b3e6; --lv3:#e8bb5c;
+    --lv4:#f7f0dc; --lv5:#f0655a;
     --alarm:#e05244; --synth:#d06a86;
     --dot:rgba(233,225,206,.10);
     --fibre-a:#000000; --fibre-b:#8a7c66;

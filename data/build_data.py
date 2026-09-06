@@ -18,7 +18,7 @@ import sys
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DATA = os.path.join(HERE, "data")
+DATA = HERE
 
 # Ideographic Description Characters and how many operands each one takes.
 IDC = {
